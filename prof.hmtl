@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Espace Professeur - Gestion des devoirs</title>
+    
+    <!-- SDK Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #3498db;
+            --success: #27ae60;
+            --danger: #e74c3c;
+            --bg: #f8fafc;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        .container { max-width: 1100px; margin: 0 auto; }
+        
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+        h1 { margin: 0; color: var(--primary); font-size: 1.6em; }
+
+        /* Navigation onglets */
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab-btn {
+            padding: 10px 20px;
+            background: #e2e8f0;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1em;
+            color: #4a5568;
+            transition: all 0.2s;
+        }
+        .tab-btn.active { background: var(--primary); color: white; }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.08);
+            margin-bottom: 25px;
+        }
+        .card h2 { margin-top: 0; color: var(--primary); font-size: 1.25em; border-bottom: 1px solid #edf2f7; padding-bottom: 10px; }
+
+        label { display: block; font-weight: 600; margin-bottom: 6px; margin-top: 14px; font-size: 0.95em; }
+        input[type="text"], textarea, select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #cbd5e0;
+            border-radius: 6px;
+            font-family: inherit;
+            box-sizing: border-box;
+            font-size: 0.95em;
+        }
+        input[type="text"]:focus, textarea:focus, select:focus {
+            outline: none; border-color: var(--accent);
+        }
+
+        .btn {
+            background: var(--accent);
+            color: white;
+            padding: 10px 18px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.95em;
+            transition: opacity 0.2s;
+        }
+        .btn:hover { opacity: 0.9; }
+        .btn-success { background: var(--success); }
+        .btn-sm { padding: 6px 10px; font-size: 0.85em; }
+
+        /* Tableaux */
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid #edf2f7; font-size: 0.95em; }
+        th { background: #edf2f7; color: #4a5568; font-weight: 600; }
+        
+        .badge { padding: 3px 8px; border-radius: 4px; font-size: 0.85em; font-weight: bold; }
+        .badge-termine { background: #d4edda; color: #155724; }
+        .badge-cours { background: #fff3cd; color: #856404; }
+        .badge-nonfait { background: #f8d7da; color: #721c24; }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center; align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            width: 90%; max-width: 650px;
+            max-height: 80vh; overflow-y: auto;
+        }
+
+        .code-box {
+            background: #2d3748;
+            color: #63b3ed;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.88em;
+            margin-top: 8px;
+            white-space: pre-wrap;
+        }
+        .radio-group { display: flex; gap: 20px; margin-top: 8px; flex-wrap: wrap; }
+        .radio-option { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🎓 Tableau de bord Enseignant</h1>
+        <div>Statut : <span id="db-status" style="color:var(--success); font-weight:bold;">Connecté à Firebase</span></div>
+    </header>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="basculerOnglet('tab-eleves')">👥 Gestion des Élèves & Résultats</button>
+        <button class="tab-btn" onclick="basculerOnglet('tab-creer')">➕ Créer un Devoir</button>
+        <button class="tab-btn" onclick="basculerOnglet('tab-devoirs')">📚 Banque de Devoirs</button>
+    </div>
+
+    <!-- ONGLET 1 : GESTION DES ÉLÈVES & SUIVI -->
+    <div id="tab-eleves" class="tab-pane">
+        <div class="card">
+            <h2>Créer un profil élève</h2>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="nouvel-eleve-nom" placeholder="Prénom et Nom de l'élève (ex: Lucas)">
+                <button class="btn btn-success" onclick="creerEleve()">Ajouter l'élève</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Devoirs assignés & Résultats détaillés</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Élève</th>
+                        <th>Code d'accès</th>
+                        <th>Devoir</th>
+                        <th>Statut</th>
+                        <th>Score</th>
+                        <th>Fautes</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="table-assignations-corps">
+                    <tr><td colspan="7" style="text-align:center; color:#888;">Chargement des données...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ONGLET 2 : CRÉATION DU DEVOIR FORMAT SIMPLE -->
+    <div id="tab-creer" class="tab-pane" style="display: none;">
+        <div class="card">
+            <h2>Nouveau Devoir</h2>
+
+            <label for="titre-devoir">1. Titre du devoir :</label>
+            <input type="text" id="titre-devoir" placeholder="Ex: Devoir de Lundi - Prépositions & Présent">
+
+            <label>2. Type de réponse attendue :</label>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" name="type-exo" value="select-identique" checked onchange="ajusterFormulaireCreation()">
+                    Menu déroulant (Choix identiques pour tout l'exercice)
+                </label>
+                <label class="radio-option">
+                    <input type="radio" name="type-exo" value="select-variable" onchange="ajusterFormulaireCreation()">
+                    Menu déroulant (Choix différents par phrase)
+                </label>
+                <label class="radio-option">
+                    <input type="radio" name="type-exo" value="input-texte" onchange="ajusterFormulaireCreation()">
+                    Zone de texte (L'élève tape sa réponse)
+                </label>
+            </div>
+
+            <!-- Champ options globales si choix identiques -->
+            <div id="box-options-identiques" style="margin-top: 15px;">
+                <label for="options-globales">Options du menu déroulant (séparées par une virgule) :</label>
+                <input type="text" id="options-globales" value="in, on, at" placeholder="ex: in, on, at">
+            </div>
+
+            <label for="texte-brut-devoir" style="margin-top: 15px;">3. Collez vos phrases ici :</label>
+            <div id="aide-format" class="code-box">Format attendu :
+The keys are ____ the table.;on
+He is waiting ____ the bus stop.;at</div>
+
+            <textarea id="texte-brut-devoir" rows="9" placeholder="Collez vos phrases ici..."></textarea>
+
+            <div style="margin-top: 15px; display: flex; gap: 10px;">
+                <button class="btn" onclick="previsualiserDevoir()">👁️ Prévisualiser</button>
+                <button class="btn btn-success" onclick="enregistrerDevoir()">💾 Sauvegarder ce Devoir</button>
+            </div>
+        </div>
+
+        <!-- Zone de prévisualisation -->
+        <div class="card" id="card-previsualisation" style="display:none;">
+            <h2>Aperçu du Devoir tel que l'élève le verra</h2>
+            <div id="zone-apercu"></div>
+        </div>
+    </div>
+
+    <!-- ONGLET 3 : BANQUE DE DEVOIRS -->
+    <div id="tab-devoirs" class="tab-pane" style="display: none;">
+        <div class="card">
+            <h2>Banque de Devoirs disponibles</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Titre</th>
+                        <th>Type</th>
+                        <th>Nb phrases</th>
+                        <th>Créé le</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="table-devoirs-corps">
+                    <tr><td colspan="5" style="text-align:center; color:#888;">Chargement...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL DÉTAIL DES FAUTES RÉELLES -->
+<div class="modal" id="modal-fautes">
+    <div class="modal-content">
+        <h2 id="modal-titre" style="margin-top:0; color:var(--primary);">Détail des erreurs</h2>
+        <div id="modal-contenu"></div>
+        <div style="text-align:right; margin-top:20px;">
+            <button class="btn" onclick="fermerModal()">Fermer</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- 1. CONFIGURATION FIREBASE ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyBF72uEilOlNUnRB4_BqREpXCj6NvF4Mac",
+        authDomain: "exoanglais-6dd43.firebaseapp.com",
+        projectId: "exoanglais-6dd43",
+        storageBucket: "exoanglais-6dd43.firebasestorage.app",
+        messagingSenderId: "656075154329",
+        appId: "1:656075154329:web:cfe7ccb130ae55da02a908",
+        measurementId: "G-BWY78NT061"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    let listeEleves = [];
+    let listeDevoirs = [];
+
+    // --- 2. GESTION DES ONGLETS & FORMATS ---
+    function basculerOnglet(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        document.getElementById(tabId).style.display = 'block';
+        event.target.classList.add('active');
+    }
+
+    function ajusterFormulaireCreation() {
+        const type = document.querySelector('input[name="type-exo"]:checked').value;
+        const boxIdentiques = document.getElementById('box-options-identiques');
+        const aide = document.getElementById('aide-format');
+
+        if (type === 'select-identique') {
+            boxIdentiques.style.display = 'block';
+            aide.textContent = `Format attendu (Options définies ci-dessus) :\nThe keys are ____ the table.;on\nHe is waiting ____ the bus stop.;at`;
+        } else if (type === 'select-variable') {
+            boxIdentiques.style.display = 'none';
+            aide.textContent = `Format attendu (Phrase;choix1;choix2;bonne_réponse) :\nThe baby ____ (cry).;cries;is crying;is crying\nWater ____ (boil) at 100 degrees.;boils;is boiling;boils`;
+        } else {
+            boxIdentiques.style.display = 'none';
+            aide.textContent = `Format attendu (Phrase;bonne_réponse) :\nListen! The baby ____ (cry).;is crying\nI ____ (not/like) vegetables.;don't like|do not like`;
+        }
+    }
+
+    // --- 3. PARSEUR DE TEXTE VERS EXERCICE ---
+    function parserTexteEnPhrases() {
+        const type = document.querySelector('input[name="type-exo"]:checked').value;
+        const texte = document.getElementById('texte-brut-devoir').value.trim();
+        const lignes = texte.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+        const phrases = [];
+
+        lignes.forEach(ligne => {
+            const parties = ligne.split(';').map(p => p.trim());
+            if (parties.length < 2) return;
+
+            const q = parties[0];
+
+            if (type === 'select-identique') {
+                const optionsGlobales = document.getElementById('options-globales').value.split(',').map(o => o.trim());
+                phrases.push({ q: q, type: 'select', options: optionsGlobales, a: [parties[1]] });
+            } else if (type === 'select-variable') {
+                const bonneReponse = parties[parties.length - 1];
+                const options = parties.slice(1, parties.length - 1);
+                // Si la bonne réponse n'est pas déjà dans les options, on l'ajoute
+                if (!options.includes(bonneReponse)) options.push(bonneReponse);
+                phrases.push({ q: q, type: 'select', options: options, a: [bonneReponse] });
+            } else {
+                // Zone de texte (gère les variantes comme don't like|do not like)
+                const variantes = parties[1].split('|').map(v => v.trim());
+                phrases.push({ q: q, type: 'text', a: variantes });
+            }
+        });
+
+        return phrases;
+    }
+
+    function previsualiserDevoir() {
+        const phrases = parserTexteEnPhrases();
+        const cardPrev = document.getElementById('card-previsualisation');
+        const zone = document.getElementById('zone-apercu');
+
+        if (phrases.length === 0) {
+            alert("Aucune phrase valide détectée. Vérifiez le format avec les points-virgules.");
+            return;
+        }
+
+        zone.innerHTML = "";
+        phrases.forEach((p, idx) => {
+            const div = document.createElement('div');
+            div.style.marginBottom = "10px";
+            const parts = p.q.split('____');
+
+            if (p.type === 'select') {
+                let optionsHtml = `<option value="">---</option>` + p.options.map(o => `<option>${o}</option>`).join('');
+                div.innerHTML = `${idx + 1}. ${parts[0]} <select style="width:auto; padding:4px 8px;">${optionsHtml}</select> ${parts[1] || ""} <span style="color:#888; font-size:0.85em;">(Attendu : ${p.a.join('/')})</span>`;
+            } else {
+                div.innerHTML = `${idx + 1}. ${parts[0]} <input type="text" style="width:130px; padding:4px 8px;" placeholder="..."> ${parts[1] || ""} <span style="color:#888; font-size:0.85em;">(Attendu : ${p.a.join('/')})</span>`;
+            }
+            zone.appendChild(div);
+        });
+
+        cardPrev.style.display = 'block';
+        cardPrev.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // --- 4. ENREGISTREMENT DU DEVOIR DANS FIRESTORE ---
+    async function enregistrerDevoir() {
+        const titre = document.getElementById('titre-devoir').value.trim();
+        const phrases = parserTexteEnPhrases();
+
+        if (!titre) return alert("Veuillez indiquer un titre.");
+        if (phrases.length === 0) return alert("Veuillez coller au moins une phrase.");
+
+        try {
+            await db.collection("devoirs").add({
+                titre: titre,
+                phrases: phrases,
+                dateCreation: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            alert("✅ Devoir enregistré avec succès !");
+            document.getElementById('titre-devoir').value = "";
+            document.getElementById('texte-brut-devoir').value = "";
+            document.getElementById('card-previsualisation').style.display = "none";
+            basculerOnglet('tab-devoirs');
+        } catch(e) {
+            alert("Erreur d'enregistrement : " + e.message);
+        }
+    }
+
+    // --- 5. GESTION DES ÉLÈVES ---
+    async function creerEleve() {
+        const nom = document.getElementById('nouvel-eleve-nom').value.trim();
+        if (!nom) return alert("Indiquez le prénom de l'élève.");
+
+        const codeUnique = nom.toUpperCase().replace(/\s+/g, '') + '-' + Math.floor(10 + Math.random() * 90);
+
+        await db.collection("eleves").add({
+            nom: nom,
+            code: codeUnique,
+            dateCreation: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        document.getElementById('nouvel-eleve-nom').value = "";
+        alert(`Élève créé ! Code d'accès : ${codeUnique}`);
+    }
+
+    // Assigner un devoir
+    async function assignerDevoir(devoirId) {
+        const devoir = listeDevoirs.find(d => d.id === devoirId);
+        if (listeEleves.length === 0) return alert("Créez d'abord au moins un élève.");
+
+        const optionsTexte = listeEleves.map((e, idx) => `${idx + 1}. ${e.nom} (${e.code})`).join('\n');
+        const choix = prompt(`À quel élève voulez-vous assigner "${devoir.titre}" ?\n\n${optionsTexte}\n\nTapez le numéro de l'élève :`);
+        const num = parseInt(choix);
+
+        if (num >= 1 && num <= listeEleves.length) {
+            const eleveChoisi = listeEleves[num - 1];
+
+            await db.collection("assignations").add({
+                eleveId: eleveChoisi.id,
+                eleveNom: eleveChoisi.nom,
+                eleveCode: eleveChoisi.code,
+                devoirId: devoir.id,
+                devoirTitre: devoir.titre,
+                phrases: devoir.phrases,
+                statut: "non_commence", // non_commence, en_cours, termine
+                score: 0,
+                totalQuestions: devoir.phrases.length,
+                totalErreurs: 0,
+                fautesDetails: [],
+                dateAssignation: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            alert(`✅ Devoir assigné à ${eleveChoisi.nom} !`);
+        }
+    }
+
+    // --- 6. ÉCOUTE TEMPS RÉEL FIRESTORE ---
+    function ecouterDonnees() {
+        // 1. Liste des élèves
+        db.collection("eleves").orderBy("dateCreation", "desc").onSnapshot(snapshot => {
+            listeEleves = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        });
+
+        // 2. Liste des devoirs
+        db.collection("devoirs").orderBy("dateCreation", "desc").onSnapshot(snapshot => {
+            listeDevoirs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            const tbody = document.getElementById('table-devoirs-corps');
+            tbody.innerHTML = "";
+
+            if (listeDevoirs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#888;">Aucun devoir créé pour le moment.</td></tr>`;
+                return;
+            }
+
+            listeDevoirs.forEach(d => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${d.titre}</strong></td>
+                    <td>${d.phrases[0]?.type === 'select' ? 'Menu déroulant' : 'Saisie texte'}</td>
+                    <td>${d.phrases.length} phrases</td>
+                    <td>${d.dateCreation ? d.dateCreation.toDate().toLocaleDateString('fr-FR') : '-'}</td>
+                    <td>
+                        <button class="btn btn-sm" onclick="assignerDevoir('${d.id}')">➕ Assigner à un élève</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        });
+
+        // 3. Suivi des devoirs assignés & fautes
+        db.collection("assignations").orderBy("dateAssignation", "desc").onSnapshot(snapshot => {
+            const tbody = document.getElementById('table-assignations-corps');
+            tbody.innerHTML = "";
+
+            if (snapshot.empty) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#888;">Aucun devoir assigné.</td></tr>`;
+                return;
+            }
+
+            snapshot.forEach(doc => {
+                const a = doc.data();
+                const tr = document.createElement('tr');
+
+                let badgeStatut = `<span class="badge badge-nonfait">Non commencé</span>`;
+                if (a.statut === 'en_cours') badgeStatut = `<span class="badge badge-cours">En cours</span>`;
+                if (a.statut === 'termine') badgeStatut = `<span class="badge badge-termine">Terminé</span>`;
+
+                tr.innerHTML = `
+                    <td><strong>${a.eleveNom}</strong></td>
+                    <td><code>${a.eleveCode}</code></td>
+                    <td>${a.devoirTitre}</td>
+                    <td>${badgeStatut}</td>
+                    <td><strong>${a.score || 0} / ${a.totalQuestions}</strong></td>
+                    <td><strong style="color:var(--danger);">${a.totalErreurs || 0} faute(s)</strong></td>
+                    <td>
+                        <button class="btn btn-sm" onclick='voirFautes(${JSON.stringify(a)})'>🔍 Voir les erreurs</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        });
+    }
+
+    // Modal pour voir les fautes détaillées
+    window.voirFautes = function(assignation) {
+        const modal = document.getElementById('modal-fautes');
+        const titre = document.getElementById('modal-titre');
+        const contenu = document.getElementById('modal-contenu');
+
+        titre.textContent = `Erreurs de ${assignation.eleveNom} - "${assignation.devoirTitre}"`;
+
+        if (!assignation.fautesDetails || assignation.fautesDetails.length === 0) {
+            contenu.innerHTML = `<p style="color:var(--success); font-weight:bold;">🎉 Aucune faute enregistrée pour l'instant !</p>`;
+        } else {
+            let html = `<table>
+                <thead>
+                    <tr>
+                        <th>Phrase</th>
+                        <th>Réponse tapée</th>
+                        <th>Attendu</th>
+                        <th>Heure</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+
+            assignation.fautesDetails.forEach(f => {
+                html += `
+                    <tr>
+                        <td>${f.phrase}</td>
+                        <td style="color:var(--danger); font-weight:bold; text-decoration:line-through;">${f.reponseEleve || "(vide)"}</td>
+                        <td style="color:var(--success); font-weight:bold;">${f.attendu}</td>
+                        <td style="font-size:0.85em; color:#888;">${f.date || "-"}</td>
+                    </tr>
+                `;
+            });
+
+            html += `</tbody></table>`;
+            contenu.innerHTML = html;
+        }
+
+        modal.style.display = "flex";
+    };
+
+    function fermerModal() {
+        document.getElementById('modal-fautes').style.display = "none";
+    }
+
+    // Initialisation
+    ecouterDonnees();
+</script>
+</body>
+</html>
