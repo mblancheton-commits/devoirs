@@ -87,6 +87,7 @@
         .btn:hover { opacity: 0.9; }
         .btn-success { background: var(--success); }
         .btn-danger { background: var(--danger); }
+        .btn-secondary { background: #718096; }
         .btn-sm { padding: 6px 10px; font-size: 0.85em; }
 
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
@@ -110,7 +111,7 @@
             background: white;
             padding: 25px;
             border-radius: 8px;
-            width: 90%; max-width: 650px;
+            width: 90%; max-width: 700px;
             max-height: 80vh; overflow-y: auto;
         }
 
@@ -157,7 +158,7 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Code / Identifiant de l'élève</th>
+                        <th>Code / Identifiant</th>
                         <th>Date de création</th>
                         <th>Actions</th>
                     </tr>
@@ -257,10 +258,10 @@ He is waiting ____ the bus stop.;at</div>
     </div>
 </div>
 
-<!-- MODAL DÉTAIL DES FAUTES -->
+<!-- MODAL GÉNÉRAL (FAUTES OU CONSULTATION DE DEVOIR) -->
 <div class="modal" id="modal-fautes">
     <div class="modal-content">
-        <h2 id="modal-titre" style="margin-top:0; color:var(--primary);">Détail des erreurs</h2>
+        <h2 id="modal-titre" style="margin-top:0; color:var(--primary);">-</h2>
         <div id="modal-contenu"></div>
         <div style="text-align:right; margin-top:20px;">
             <button class="btn" onclick="fermerModal()">Fermer</button>
@@ -283,6 +284,8 @@ He is waiting ____ the bus stop.;at</div>
 
     let listeEleves = [];
     let listeDevoirs = [];
+    let assignationsMap = {}; // Mémoire pour éviter le bug d'apostrophe
+    let devoirsMap = {};
 
     function basculerOnglet(tabId, btnElement) {
         document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
@@ -421,6 +424,12 @@ He is waiting ____ the bus stop.;at</div>
         }
     }
 
+    async function supprimerDevoir(id, titre) {
+        if (confirm(`Supprimer définitivement le devoir "${titre}" de la banque ?`)) {
+            await db.collection("devoirs").doc(id).delete();
+        }
+    }
+
     async function assignerDevoir(devoirId) {
         const devoir = listeDevoirs.find(d => d.id === devoirId);
         if (listeEleves.length === 0) return alert("Créez d'abord au moins un élève.");
@@ -435,154 +444,4 @@ He is waiting ____ the bus stop.;at</div>
             await db.collection("assignations").add({
                 eleveId: eleveChoisi.id,
                 eleveCode: eleveChoisi.code,
-                devoirId: devoir.id,
-                devoirTitre: devoir.titre,
-                phrases: devoir.phrases,
-                statut: "non_commence",
-                score: 0,
-                totalQuestions: devoir.phrases.length,
-                totalErreurs: 0,
-                fautesDetails: [],
-                dateAssignation: firebase.firestore.FieldValue.serverTimestamp()
-            });
-
-            alert(`✅ Devoir assigné à ${eleveChoisi.code} !`);
-            basculerOnglet('tab-eleves');
-        }
-    }
-
-    function ecouterDonnees() {
-        // 1. Liste des élèves
-        db.collection("eleves").onSnapshot(snapshot => {
-            listeEleves = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            listeEleves.sort((a, b) => (b.dateCreation?.seconds || 0) - (a.dateCreation?.seconds || 0));
-
-            const tbody = document.getElementById('table-eleves-corps');
-            tbody.innerHTML = "";
-
-            if (listeEleves.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#888;">Aucun élève enregistré.</td></tr>`;
-                return;
-            }
-
-            listeEleves.forEach(e => {
-                const tr = document.createElement('tr');
-                const dateStr = e.dateCreation ? e.dateCreation.toDate().toLocaleDateString('fr-FR') : 'Aujourd\'hui';
-                tr.innerHTML = `
-                    <td><strong style="color:#2b6cb0; font-size:1.1em;">${e.code}</strong></td>
-                    <td>${dateStr}</td>
-                    <td>
-                        <button class="btn btn-danger btn-sm" onclick="supprimerEleve('${e.id}', '${e.code}')">🗑️ Supprimer</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        });
-
-        // 2. Liste des devoirs
-        db.collection("devoirs").onSnapshot(snapshot => {
-            listeDevoirs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            listeDevoirs.sort((a, b) => (b.dateCreation?.seconds || 0) - (a.dateCreation?.seconds || 0));
-
-            const tbody = document.getElementById('table-devoirs-corps');
-            tbody.innerHTML = "";
-
-            if (listeDevoirs.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#888;">Aucun devoir créé.</td></tr>`;
-                return;
-            }
-
-            listeDevoirs.forEach(d => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><strong>${d.titre}</strong></td>
-                    <td>${d.phrases[0]?.type === 'select' ? 'Menu déroulant' : 'Saisie texte'}</td>
-                    <td>${d.phrases.length} phrases</td>
-                    <td>
-                        <button class="btn btn-sm btn-success" onclick="assignerDevoir('${d.id}')">➕ Assigner à un élève</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        });
-
-        // 3. Suivi des résultats
-        db.collection("assignations").onSnapshot(snapshot => {
-            const assignations = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            assignations.sort((a, b) => (b.dateAssignation?.seconds || 0) - (a.dateAssignation?.seconds || 0));
-
-            const tbody = document.getElementById('table-assignations-corps');
-            tbody.innerHTML = "";
-
-            if (assignations.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#888;">Aucun devoir assigné.</td></tr>`;
-                return;
-            }
-
-            assignations.forEach(a => {
-                const tr = document.createElement('tr');
-
-                let badgeStatut = `<span class="badge badge-nonfait">Non commencé</span>`;
-                if (a.statut === 'en_cours') badgeStatut = `<span class="badge badge-cours">En cours</span>`;
-                if (a.statut === 'termine') badgeStatut = `<span class="badge badge-termine">Terminé</span>`;
-
-                tr.innerHTML = `
-                    <td><strong>${a.eleveCode}</strong></td>
-                    <td>${a.devoirTitre}</td>
-                    <td>${badgeStatut}</td>
-                    <td><strong>${a.score || 0} / ${a.totalQuestions}</strong></td>
-                    <td><strong style="color:var(--danger);">${a.totalErreurs || 0} faute(s)</strong></td>
-                    <td>
-                        <button class="btn btn-sm" onclick='voirFautes(${JSON.stringify(a)})'>🔍 Voir les erreurs</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        });
-    }
-
-    window.voirFautes = function(assignation) {
-        const modal = document.getElementById('modal-fautes');
-        const titre = document.getElementById('modal-titre');
-        const contenu = document.getElementById('modal-contenu');
-
-        titre.textContent = `Erreurs de ${assignation.eleveCode} sur "${assignation.devoirTitre}"`;
-
-        if (!assignation.fautesDetails || assignation.fautesDetails.length === 0) {
-            contenu.innerHTML = `<p style="color:var(--success); font-weight:bold; padding:15px; text-align:center;">🎉 Aucune faute enregistrée pour l'instant !</p>`;
-        } else {
-            let html = `<table>
-                <thead>
-                    <tr>
-                        <th>Phrase</th>
-                        <th>Réponse de l'élève</th>
-                        <th>Bonne réponse</th>
-                    </tr>
-                </thead>
-                <tbody>`;
-
-            assignation.fautesDetails.forEach(f => {
-                html += `
-                    <tr>
-                        <td>${f.phrase}</td>
-                        <td style="color:var(--danger); font-weight:bold; text-decoration:line-through;">${f.reponseEleve || "(vide)"}</td>
-                        <td style="color:var(--success); font-weight:bold;">${f.attendu}</td>
-                    </tr>
-                `;
-            });
-
-            html += `</tbody></table>`;
-            contenu.innerHTML = html;
-        }
-
-        modal.style.display = "flex";
-    };
-
-    function fermerModal() {
-        document.getElementById('modal-fautes').style.display = "none";
-    }
-
-    ecouterDonnees();
-</script>
-</body>
-</html>
+                devoirId: devoir.
