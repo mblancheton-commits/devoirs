@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon Espace Devoirs</title>
+    
+    <!-- SDK Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #3498db;
+            --success: #27ae60;
+            --danger: #e74c3c;
+            --warning: #f39c12;
+            --bg: #f4f7f6;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            padding-bottom: 90px;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        
+        /* 1. ÉCRAN DE CONNEXION */
+        #ecran-login {
+            max-width: 440px;
+            margin: 80px auto;
+            background: white;
+            padding: 35px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+        #ecran-login h1 { color: var(--primary); margin-top: 0; font-size: 1.8em; }
+        #code-input {
+            width: 100%;
+            padding: 12px;
+            font-size: 1.25em;
+            border: 2px solid #cbd5e0;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            letter-spacing: 1px;
+            box-sizing: border-box;
+            margin: 20px 0;
+            text-transform: uppercase;
+        }
+        #code-input:focus { outline: none; border-color: var(--accent); }
+
+        .btn {
+            background: var(--accent);
+            color: white;
+            padding: 12px 22px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-block;
+        }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-full { width: 100%; }
+        .btn-success { background: var(--success); }
+        .btn-warning { background: var(--warning); }
+        .btn-secondary { background: #718096; padding: 6px 12px; font-size: 0.85em; }
+        .btn-sm { padding: 6px 12px; font-size: 0.88em; }
+
+        /* EN-TÊTE ÉLÈVE CONNECTÉ */
+        #header-eleve {
+            display: none;
+            background: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            margin-bottom: 25px;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .info-profil { font-size: 1.1em; color: #4a5568; }
+
+        /* ONGLETS "À FAIRE" / "FAITS" */
+        #ecran-tableau-de-bord { display: none; }
+        .tabs-nav {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 14px;
+            background: #e2e8f0;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1.05em;
+            color: #4a5568;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 10px rgba(44, 62, 80, 0.2);
+        }
+        .tab-badge {
+            background: rgba(255,255,255,0.25);
+            color: inherit;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.85em;
+        }
+        .tab-btn.active .tab-badge {
+            background: white;
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        /* CARTES DE DEVOIRS */
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        .devoir-card {
+            background: white;
+            padding: 20px 24px;
+            border-radius: 10px;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.05);
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 6px solid var(--accent);
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .devoir-card.fait { border-left-color: var(--success); }
+        .devoir-card h3 { margin: 0 0 6px 0; color: var(--primary); font-size: 1.2em; }
+        
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 0.82em;
+            font-weight: bold;
+        }
+        .badge-afaire { background: #fee2e2; color: #991b1b; }
+        .badge-encours { background: #fef3c7; color: #92400e; }
+        .badge-termine { background: #dcfce7; color: #166534; }
+
+        .empty-state {
+            background: white;
+            padding: 40px 20px;
+            border-radius: 10px;
+            text-align: center;
+            color: #718096;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+        }
+        .empty-state-icon { font-size: 2.8em; margin-bottom: 10px; }
+
+        /* 3. ÉCRAN DE L'EXERCICE */
+        #ecran-exercice { display: none; }
+        .exo-header {
+            background: white;
+            padding: 16px 22px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 10px;
+            z-index: 10;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .phrase-box {
+            background: white;
+            padding: 16px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            font-size: 1.05em;
+        }
+        .phrase-num { font-weight: bold; min-width: 35px; color: #718096; }
+        .phrase-texte { flex-grow: 1; }
+
+        input[type="text"].champ-reponse {
+            padding: 8px 12px;
+            border: 2px solid #cbd5e0;
+            border-radius: 6px;
+            font-size: 0.95em;
+            width: 170px;
+            margin: 0 6px;
+            font-family: inherit;
+        }
+        input[type="text"].champ-reponse:focus { outline: none; border-color: var(--accent); }
+
+        select.champ-select {
+            padding: 8px 12px;
+            border: 2px solid #cbd5e0;
+            border-radius: 6px;
+            font-size: 0.95em;
+            margin: 0 6px;
+            background: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button.btn-verifier {
+            padding: 8px 16px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        button.btn-verifier:disabled { background: #cbd5e0; cursor: not-allowed; }
+
+        .correct-input { border-color: var(--success) !important; background: #eafaf1 !important; color: #1e8449 !important; }
+        .incorrect-input { border-color: var(--danger) !important; background: #fceae8 !important; color: #c0392b !important; }
+        .mark-ok { color: var(--success); font-weight: bold; font-size: 1.3em; margin-left: 10px; }
+        .mark-err { color: var(--danger); font-weight: bold; font-size: 1.1em; margin-left: 10px; }
+
+        /* MODAL DES FAUTES ÉLÈVE */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center; align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            width: 90%; max-width: 600px;
+            max-height: 80vh; overflow-y: auto;
+        }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.95em; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #edf2f7; }
+        th { background: #edf2f7; color: #4a5568; }
+
+        /* OVERLAY TAQUINERIES CORÉENNES */
+        #punition-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background-color: rgba(231, 76, 60, 0.96);
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            z-index: 99999;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.15s ease;
+        }
+        #punition-overlay.show { opacity: 1; pointer-events: auto; }
+        #punition-text {
+            font-family: 'Impact', 'Arial Black', sans-serif;
+            color: #ffffff;
+            font-size: 16vw;
+            line-height: 1;
+            text-shadow: 8px 8px 0px rgba(0,0,0,0.35);
+            animation: zoomTremble 0.4s ease-out;
+            user-select: none;
+            text-align: center;
+        }
+        #punition-sub {
+            color: #ffeaa7; font-size: 2.2vw; font-weight: bold;
+            margin-top: 15px; text-transform: uppercase;
+        }
+        @keyframes zoomTremble {
+            0% { transform: scale(0.2) rotate(-15deg); }
+            50% { transform: scale(1.15) rotate(5deg); }
+            100% { transform: scale(1) rotate(0deg); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- 1. CONNEXION -->
+    <div id="ecran-login">
+        <h1>👋 Espace Devoirs</h1>
+        <p>Entrez votre code élève pour accéder à vos exercices :</p>
+        <input type="text" id="code-input" placeholder="EX: LUCAS01" autocomplete="off">
+        <button class="btn btn-full" onclick="seConnecter()">Voir mes devoirs</button>
+    </div>
+
+    <!-- EN-TÊTE ÉLÈVE CONNECTÉ -->
+    <div id="header-eleve">
+        <div class="info-profil">Élève : <strong id="affichage-code-eleve" style="color:var(--accent);">-</strong></div>
+        <button class="btn btn-secondary" onclick="deconnexion()">Changer de compte</button>
+    </div>
+
+    <!-- 2. TABLEAU DE BORD DYNAMIQUE -->
+    <div id="ecran-tableau-de-bord">
+        <div class="tabs-nav">
+            <button class="tab-btn active" id="btn-tab-afaire" onclick="changerOngletDevoirs('afaire')">
+                ⏳ À faire <span class="tab-badge" id="badge-nb-afaire">0</span>
+            </button>
+            <button class="tab-btn" id="btn-tab-faits" onclick="changerOngletDevoirs('faits')">
+                🏆 Faits / Terminés <span class="tab-badge" id="badge-nb-faits">0</span>
+            </button>
+        </div>
+
+        <!-- LISTE : À FAIRE -->
+        <div id="panel-afaire" class="tab-panel active">
+            <div id="conteneur-afaire">
+                <p style="text-align:center; color:#888;">Chargement de vos devoirs...</p>
+            </div>
+        </div>
+
+        <!-- LISTE : FAITS / TERMINÉS -->
+        <div id="panel-faits" class="tab-panel">
+            <div id="conteneur-faits">
+                <p style="text-align:center; color:#888;">Chargement...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. ÉCRAN DU DEVOIR EN COURS -->
+    <div id="ecran-exercice">
+        <div class="exo-header">
+            <div>
+                <button class="btn btn-secondary" onclick="retourTableauDeBord()">← Retour aux devoirs</button>
+                <h2 id="exo-titre" style="margin: 8px 0 0 0; color:var(--primary); font-size: 1.25em;">-</h2>
+            </div>
+            <div style="text-align:right;">
+                <div style="font-weight:bold; color:var(--success); font-size: 1.2em;">Score : <span id="exo-score">0</span> / <span id="exo-total">0</span></div>
+                <div style="font-size:0.9em; color:var(--danger); font-weight:bold;">Erreurs : <span id="exo-erreurs">0</span></div>
+            </div>
+        </div>
+
+        <div id="phrases-conteneur"></div>
+
+        <div id="exo-termine-box" style="display:none; background:white; padding:30px; border-radius:10px; text-align:center; margin-top:20px; box-shadow:0 4px 10px rgba(0,0,0,0.06);">
+            <h2 style="color:var(--success); margin-top:0;">🎉 Bravo ! Devoir terminé !</h2>
+            <p>Ce devoir a été déplacé dans votre onglet <strong>« 🏆 Faits / Terminés »</strong>.</p>
+            <button class="btn btn-success" onclick="retourTableauDeBord()">Retourner à mes devoirs</button>
+        </div>
+    </div>
+
+</div>
+
+<!-- MODAL POUR REVOIR LES ERREURS D'UN DEVOIR FAIT -->
+<div class="modal" id="modal-fautes-eleve">
+    <div class="modal-content">
+        <h2 id="modal-titre" style="margin-top:0; color:var(--primary);">Récapitulatif des erreurs</h2>
+        <div id="modal-liste-fautes"></div>
+        <div style="text-align:right; margin-top:20px;">
+            <button class="btn btn-secondary" onclick="fermerModalFautes()">Fermer</button>
+        </div>
+    </div>
+</div>
+
+<!-- OVERLAY TAQUINERIES CORÉENNES -->
+<div id="punition-overlay">
+    <div id="punition-text">바보!</div>
+    <div id="punition-sub">Niveau 1 : Ça commence mal...</div>
+</div>
+
+<script>
+    // --- 1. INITIALISATION FIREBASE ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyBF72uEilOlNUnRB4_BqREpXCj6NvF4Mac",
+        authDomain: "exoanglais-6dd43.firebaseapp.com",
+        projectId: "exoanglais-6dd43",
+        storageBucket: "exoanglais-6dd43.firebasestorage.app",
+        messagingSenderId: "656075154329",
+        appId: "1:656075154329:web:cfe7ccb130ae55da02a908",
+        measurementId: "G-BWY78NT061"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const insultesPaliers = [
+        { kr: "메롱~ 😜", fr: "Nananère ! Raté !" },
+        { kr: "바보야~ 🙃", fr: "Petit idiot mignon !" },
+        { kr: "땡! 🔔❌", fr: "Buzzer ! Mauvaise pioche !" },
+        { kr: "똥강아지! 🐶", fr: "Petit fripon !" },
+        { kr: "아이구~ 🤦", fr: "Aigoo~ Mais quelle boulette !" },
+        { kr: "졸려? 😴💤", fr: "Tu as besoin d'une sieste ?" },
+        { kr: "손 미끄러졌지? ✋", fr: "Ta main a glissé, avoue ?" },
+        { kr: "눈 어디 뒀어? 👀", fr: "Où as-tu laissé tes yeux ?" },
+        { kr: "말썽꾸러기! 😈", fr: "Espèce de petit garnement !" },
+        { kr: "뇌가 쉬는 중? 🧠☕", fr: "Cerveau en pause café ?" },
+        { kr: "머리 폼이야? 👒", fr: "Ta tête, c'est juste pour faire joli ?" },
+        { kr: "울지 마~ 🥺", fr: "Ne pleure pas, tu vas y arriver !" },
+        { kr: "꿈꾸고 있어? 🦄", fr: "Tu es en plein rêve éveillé ?" },
+        { kr: "진짜 왜 이래~ 😅", fr: "Sérieusement, qu'est-ce que tu nous fais ?" },
+        { kr: "슈퍼 바보! 🦸‍♂️💥", fr: "Niveau Ultime : Super Babo !" }
+    ];
+
+    let codeEleveActuel = localStorage.getItem("codeEleve") || "";
+    let devoirActuel = null;
+    let assignationIdActuelle = null;
+    let scoreActuel = 0;
+    let erreursActuelles = 0;
+    let fautesEnregistrees = [];
+    let timerOverlay = null;
+
+    // --- 2. GESTION DE LA SESSION ---
+    function verifierSession() {
+        if (codeEleveActuel) {
+            document.getElementById('ecran-login').style.display = 'none';
+            document.getElementById('header-eleve').style.display = 'flex';
+            document.getElementById('affichage-code-eleve').textContent = codeEleveActuel;
+            document.getElementById('ecran-tableau-de-bord').style.display = 'block';
+            document.getElementById('ecran-exercice').style.display = 'none';
+            ecouterDevoirsEnDirect();
+        } else {
+            document.getElementById('ecran-login').style.display = 'block';
+            document.getElementById('header-eleve').style.display = 'none';
+            document.getElementById('ecran-tableau-de-bord').style.display = 'none';
+            document.getElementById('ecran-exercice').style.display = 'none';
+        }
+    }
+
+    function seConnecter() {
+        const saisie = document.getElementById('code-input').value.trim();
+        if (!saisie) return alert("Veuillez entrer votre code élève.");
+
+        codeEleveActuel = saisie;
+        localStorage.setItem("codeEleve", codeEleveActuel);
+        verifierSession();
+    }
+
+    function deconnexion() {
+        if (confirm("Voulez-vous changer de compte élève ?")) {
+            localStorage.removeItem("codeEleve");
+            codeEleveActuel = "";
+            verifierSession();
+        }
+    }
+
+    document.getElementById('code-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') seConnecter();
+    });
+
+    function changerOngletDevoirs(onglet) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+
+        if (onglet === 'afaire') {
+            document.getElementById('btn-tab-afaire').classList.add('active');
+            document.getElementById('panel-afaire').classList.add('active');
+        } else {
+            document.getElementById('btn-tab-faits').classList.add('active');
+            document.getElementById('panel-faits').classList.add('active');
+        }
+    }
+
+    // --- 3. CHARGEMENT DYNAMIQUE DES DEVOIRS EN TEMPS RÉEL ---
+    function ecouterDevoirsEnDirect() {
+        db.collection("assignations").onSnapshot(snapshot => {
+            const tous = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            // Filtrer par code élève
+            const mesDevoirs = tous.filter(d => d.eleveCode && d.eleveCode.toUpperCase() ==
