@@ -411,6 +411,7 @@
     ];
 
     let codeEleveActuel = localStorage.getItem("codeEleve") || "";
+    let devoirsChargesMap = {}; // Mémoire pour éviter les bugs d'apostrophes
     let devoirActuel = null;
     let assignationIdActuelle = null;
     let scoreActuel = 0;
@@ -469,17 +470,22 @@
         }
     }
 
-    // --- 3. CHARGEMENT DYNAMIQUE DES DEVOIRS EN TEMPS RÉEL ---
+    // --- 3. CHARGEMENT DYNAMIQUE (ROBUSTE CONTRE LES APOSTROPHES) ---
     function ecouterDevoirsEnDirect() {
         db.collection("assignations").onSnapshot(snapshot => {
             const tous = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            
+            // Enregistrer dans la mémoire globale
+            devoirsChargesMap = {};
+            tous.forEach(d => { devoirsChargesMap[d.id] = d; });
+
             // Filtrer par code élève
             const mesDevoirs = tous.filter(d => d.eleveCode && d.eleveCode.toUpperCase() === codeEleveActuel.toUpperCase());
 
             const devoirsAFaire = mesDevoirs.filter(d => d.statut !== 'termine');
             const devoirsFaits = mesDevoirs.filter(d => d.statut === 'termine');
 
-            // Mettre à jour les compteurs
+            // Mettre à jour les badges
             document.getElementById('badge-nb-afaire').textContent = devoirsAFaire.length;
             document.getElementById('badge-nb-faits').textContent = devoirsFaits.length;
 
@@ -508,7 +514,7 @@
                             <div>${badgeHtml} · <span style="color:#718096; font-size:0.9em;">${d.totalQuestions} phrases</span></div>
                         </div>
                         <div>
-                            <button class="btn ${estEnCours ? 'btn-warning' : ''}" onclick='lancerExercice(${JSON.stringify(d)})'>
+                            <button class="btn ${estEnCours ? 'btn-warning' : ''}" onclick="lancerExerciceParId('${d.id}')">
                                 ${estEnCours ? 'Continuer ▶' : 'Commencer ▶'}
                             </button>
                         </div>
@@ -543,8 +549,8 @@
                             </div>
                         </div>
                         <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                            ${aDesFautes ? `<button class="btn btn-secondary btn-sm" onclick='revoirFautes(${JSON.stringify(d)})'>🔍 Revoir mes fautes</button>` : ''}
-                            <button class="btn btn-sm btn-success" onclick='recommencerDevoir(${JSON.stringify(d)})'>🔄 Refaire</button>
+                            ${aDesFautes ? `<button class="btn btn-secondary btn-sm" onclick="revoirFautesParId('${d.id}')">🔍 Revoir mes fautes</button>` : ''}
+                            <button class="btn btn-sm btn-success" onclick="recommencerDevoirParId('${d.id}')">🔄 Refaire</button>
                         </div>
                     `;
                     conteneurFaits.appendChild(card);
@@ -554,7 +560,10 @@
     }
 
     // --- 4. EXÉCUTION D'UN DEVOIR ---
-    function lancerExercice(assignation) {
+    function lancerExerciceParId(id) {
+        const assignation = devoirsChargesMap[id];
+        if (!assignation) return alert("Devoir introuvable.");
+
         devoirActuel = assignation;
         assignationIdActuelle = assignation.id;
         scoreActuel = assignation.score || 0;
@@ -573,11 +582,17 @@
         const conteneur = document.getElementById('phrases-conteneur');
         conteneur.innerHTML = "";
 
+        if (!assignation.phrases || !Array.isArray(assignation.phrases)) {
+            conteneur.innerHTML = `<p style="color:red; text-align:center;">Erreur : ce devoir ne contient pas de phrases valides.</p>`;
+            return;
+        }
+
         assignation.phrases.forEach((p, idx) => {
             const num = idx + 1;
             const div = document.createElement('div');
             div.className = "phrase-box";
-            const parts = p.q.split('____');
+            // Gère soit ____ soit ___
+            const parts = p.q.includes('____') ? p.q.split('____') : p.q.split('___');
 
             if (p.type === 'select') {
                 let optionsHtml = `<option value="">---</option>` + p.options.map(o => `<option value="${o}">${o}</option>`).join('');
@@ -615,18 +630,15 @@
         });
     }
 
-    async function recommencerDevoir(assignation) {
+    async function recommencerDevoirParId(id) {
         if (confirm("Veux-tu réinitialiser ce devoir pour le refaire depuis le début ?")) {
-            await db.collection("assignations").doc(assignation.id).update({
+            await db.collection("assignations").doc(id).update({
                 statut: "en_cours",
                 score: 0,
                 totalErreurs: 0,
                 fautesDetails: []
             });
-            assignation.score = 0;
-            assignation.totalErreurs = 0;
-            assignation.fautesDetails = [];
-            lancerExercice(assignation);
+            lancerExerciceParId(id);
         }
     }
 
@@ -670,8 +682,9 @@
             input.classList.add('incorrect-input');
             fb.innerHTML = '<span class="mark-err">✗</span>';
 
+            const phraseCorrigee = p.q.includes('____') ? p.q.replace('____', `[${p.a.join('/')}]`) : p.q.replace('___', `[${p.a.join('/')}]`);
             fautesEnregistrees.push({
-                phrase: p.q.replace('____', `[${p.a.join('/')}]`),
+                phrase: phraseCorrigee,
                 reponseEleve: saisie,
                 attendu: p.a.join(' / '),
                 date: new Date().toLocaleTimeString("fr-FR")
@@ -719,8 +732,10 @@
         timerOverlay = setTimeout(() => overlay.classList.remove('show'), 1300);
     }
 
-    // Modal de révision des fautes
-    window.revoirFautes = function(devoir) {
+    function revoirFautesParId(id) {
+        const devoir = devoirsChargesMap[id];
+        if (!devoir) return;
+
         const modal = document.getElementById('modal-fautes-eleve');
         const titre = document.getElementById('modal-titre');
         const conteneur = document.getElementById('modal-liste-fautes');
@@ -750,7 +765,7 @@
         html += `</tbody></table>`;
         conteneur.innerHTML = html;
         modal.style.display = "flex";
-    };
+    }
 
     function fermerModalFautes() {
         document.getElementById('modal-fautes-eleve').style.display = "none";
