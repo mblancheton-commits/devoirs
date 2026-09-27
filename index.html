@@ -474,4 +474,295 @@
         db.collection("assignations").onSnapshot(snapshot => {
             const tous = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             // Filtrer par code élève
-            const mesDevoirs = tous.filter(d => d.eleveCode && d.eleveCode.toUpperCase() ==
+            const mesDevoirs = tous.filter(d => d.eleveCode && d.eleveCode.toUpperCase() === codeEleveActuel.toUpperCase());
+
+            const devoirsAFaire = mesDevoirs.filter(d => d.statut !== 'termine');
+            const devoirsFaits = mesDevoirs.filter(d => d.statut === 'termine');
+
+            // Mettre à jour les compteurs
+            document.getElementById('badge-nb-afaire').textContent = devoirsAFaire.length;
+            document.getElementById('badge-nb-faits').textContent = devoirsFaits.length;
+
+            // Rendu section "À FAIRE"
+            const conteneurAFaire = document.getElementById('conteneur-afaire');
+            if (devoirsAFaire.length === 0) {
+                conteneurAFaire.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🎉</div>
+                        <h3>Tout est à jour !</h3>
+                        <p>Tu n'as aucun devoir en attente pour le moment.</p>
+                    </div>`;
+            } else {
+                conteneurAFaire.innerHTML = "";
+                devoirsAFaire.forEach(d => {
+                    const card = document.createElement('div');
+                    card.className = "devoir-card";
+                    const estEnCours = (d.statut === 'en_cours');
+                    const badgeHtml = estEnCours 
+                        ? `<span class="badge badge-encours">En cours (${d.score || 0}/${d.totalQuestions})</span>` 
+                        : `<span class="badge badge-afaire">Nouveau</span>`;
+
+                    card.innerHTML = `
+                        <div>
+                            <h3>${d.devoirTitre}</h3>
+                            <div>${badgeHtml} · <span style="color:#718096; font-size:0.9em;">${d.totalQuestions} phrases</span></div>
+                        </div>
+                        <div>
+                            <button class="btn ${estEnCours ? 'btn-warning' : ''}" onclick='lancerExercice(${JSON.stringify(d)})'>
+                                ${estEnCours ? 'Continuer ▶' : 'Commencer ▶'}
+                            </button>
+                        </div>
+                    `;
+                    conteneurAFaire.appendChild(card);
+                });
+            }
+
+            // Rendu section "FAITS"
+            const conteneurFaits = document.getElementById('conteneur-faits');
+            if (devoirsFaits.length === 0) {
+                conteneurFaits.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📚</div>
+                        <h3>Pas encore de devoirs terminés</h3>
+                        <p>Tes devoirs validés apparaîtront ici avec tes notes.</p>
+                    </div>`;
+            } else {
+                conteneurFaits.innerHTML = "";
+                devoirsFaits.forEach(d => {
+                    const card = document.createElement('div');
+                    card.className = "devoir-card fait";
+                    const aDesFautes = d.fautesDetails && d.fautesDetails.length > 0;
+
+                    card.innerHTML = `
+                        <div>
+                            <h3>${d.devoirTitre}</h3>
+                            <div style="margin-bottom: 6px;">
+                                <span class="badge badge-termine">Terminé ✓</span>
+                                <strong style="color:var(--success); margin-left: 8px;">Score : ${d.score} / ${d.totalQuestions}</strong>
+                                <span style="color:var(--danger); font-size:0.9em; margin-left: 8px;">(${d.totalErreurs || 0} faute(s))</span>
+                            </div>
+                        </div>
+                        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                            ${aDesFautes ? `<button class="btn btn-secondary btn-sm" onclick='revoirFautes(${JSON.stringify(d)})'>🔍 Revoir mes fautes</button>` : ''}
+                            <button class="btn btn-sm btn-success" onclick='recommencerDevoir(${JSON.stringify(d)})'>🔄 Refaire</button>
+                        </div>
+                    `;
+                    conteneurFaits.appendChild(card);
+                });
+            }
+        });
+    }
+
+    // --- 4. EXÉCUTION D'UN DEVOIR ---
+    function lancerExercice(assignation) {
+        devoirActuel = assignation;
+        assignationIdActuelle = assignation.id;
+        scoreActuel = assignation.score || 0;
+        erreursActuelles = assignation.totalErreurs || 0;
+        fautesEnregistrees = assignation.fautesDetails || [];
+
+        document.getElementById('ecran-tableau-de-bord').style.display = 'none';
+        document.getElementById('ecran-exercice').style.display = 'block';
+
+        document.getElementById('exo-titre').textContent = assignation.devoirTitre;
+        document.getElementById('exo-score').textContent = scoreActuel;
+        document.getElementById('exo-total').textContent = assignation.totalQuestions;
+        document.getElementById('exo-erreurs').textContent = erreursActuelles;
+        document.getElementById('exo-termine-box').style.display = 'none';
+
+        const conteneur = document.getElementById('phrases-conteneur');
+        conteneur.innerHTML = "";
+
+        assignation.phrases.forEach((p, idx) => {
+            const num = idx + 1;
+            const div = document.createElement('div');
+            div.className = "phrase-box";
+            const parts = p.q.split('____');
+
+            if (p.type === 'select') {
+                let optionsHtml = `<option value="">---</option>` + p.options.map(o => `<option value="${o}">${o}</option>`).join('');
+                div.innerHTML = `
+                    <span class="phrase-num">${num}.</span>
+                    <span class="phrase-texte">
+                        ${parts[0]}
+                        <select class="champ-select" id="input-q-${idx}" onchange="verifierLigne(${idx})">
+                            ${optionsHtml}
+                        </select>
+                        <span id="fb-q-${idx}"></span>
+                        ${parts[1] || ""}
+                    </span>
+                `;
+            } else {
+                div.innerHTML = `
+                    <span class="phrase-num">${num}.</span>
+                    <span class="phrase-texte">
+                        ${parts[0]}
+                        <input type="text" class="champ-reponse" id="input-q-${idx}" placeholder="réponse..." autocomplete="off">
+                        <button class="btn-verifier" id="btn-q-${idx}" onclick="verifierLigne(${idx})">Vérifier</button>
+                        <span id="fb-q-${idx}"></span>
+                        ${parts[1] || ""}
+                    </span>
+                `;
+            }
+            conteneur.appendChild(div);
+
+            if (p.type === 'text') {
+                setTimeout(() => {
+                    const el = document.getElementById(`input-q-${idx}`);
+                    if (el) el.addEventListener('keypress', (e) => { if (e.key === 'Enter') verifierLigne(idx); });
+                }, 0);
+            }
+        });
+    }
+
+    async function recommencerDevoir(assignation) {
+        if (confirm("Veux-tu réinitialiser ce devoir pour le refaire depuis le début ?")) {
+            await db.collection("assignations").doc(assignation.id).update({
+                statut: "en_cours",
+                score: 0,
+                totalErreurs: 0,
+                fautesDetails: []
+            });
+            assignation.score = 0;
+            assignation.totalErreurs = 0;
+            assignation.fautesDetails = [];
+            lancerExercice(assignation);
+        }
+    }
+
+    async function verifierLigne(idx) {
+        const p = devoirActuel.phrases[idx];
+        const input = document.getElementById(`input-q-${idx}`);
+        const fb = document.getElementById(`fb-q-${idx}`);
+        const btn = document.getElementById(`btn-q-${idx}`);
+
+        if (input.disabled) return;
+
+        const saisie = input.value.trim().toLowerCase();
+        if (!saisie) return;
+
+        const bonnesReponses = p.a.map(a => a.trim().toLowerCase());
+
+        if (bonnesReponses.includes(saisie)) {
+            // BONNE RÉPONSE
+            input.classList.remove('incorrect-input');
+            input.classList.add('correct-input');
+            input.disabled = true;
+            if (btn) btn.disabled = true;
+            fb.innerHTML = '<span class="mark-ok">✓</span>';
+
+            scoreActuel++;
+            document.getElementById('exo-score').textContent = scoreActuel;
+
+            await synchroniserProgression();
+
+            if (scoreActuel === devoirActuel.totalQuestions) {
+                document.getElementById('exo-termine-box').style.display = 'block';
+                document.getElementById('exo-termine-box').scrollIntoView({ behavior: 'smooth' });
+                await db.collection("assignations").doc(assignationIdActuelle).update({
+                    statut: "termine"
+                });
+            }
+        } else {
+            // FAUTE
+            erreursActuelles++;
+            document.getElementById('exo-erreurs').textContent = erreursActuelles;
+            input.classList.add('incorrect-input');
+            fb.innerHTML = '<span class="mark-err">✗</span>';
+
+            fautesEnregistrees.push({
+                phrase: p.q.replace('____', `[${p.a.join('/')}]`),
+                reponseEleve: saisie,
+                attendu: p.a.join(' / '),
+                date: new Date().toLocaleTimeString("fr-FR")
+            });
+
+            await synchroniserProgression();
+            declencherTaquinerie();
+
+            input.focus();
+            if (p.type === 'text') input.select();
+        }
+    }
+
+    async function synchroniserProgression() {
+        if (!assignationIdActuelle) return;
+
+        const estFini = (scoreActuel === devoirActuel.totalQuestions);
+        await db.collection("assignations").doc(assignationIdActuelle).update({
+            statut: estFini ? "termine" : "en_cours",
+            score: scoreActuel,
+            totalErreurs: erreursActuelles,
+            fautesDetails: fautesEnregistrees,
+            dateDerniereActivite: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    }
+
+    function declencherTaquinerie() {
+        let index = Math.min(erreursActuelles - 1, insultesPaliers.length - 1);
+        if (index < 0) index = 0;
+
+        const d = insultesPaliers[index];
+        const overlay = document.getElementById('punition-overlay');
+        const text = document.getElementById('punition-text');
+        const sub = document.getElementById('punition-sub');
+
+        text.textContent = d.kr;
+        sub.textContent = `${d.fr} (Faute n°${erreursActuelles})`;
+
+        text.style.animation = 'none';
+        text.offsetHeight;
+        text.style.animation = 'zoomTremble 0.4s ease-out';
+
+        overlay.classList.add('show');
+        if (timerOverlay) clearTimeout(timerOverlay);
+        timerOverlay = setTimeout(() => overlay.classList.remove('show'), 1300);
+    }
+
+    // Modal de révision des fautes
+    window.revoirFautes = function(devoir) {
+        const modal = document.getElementById('modal-fautes-eleve');
+        const titre = document.getElementById('modal-titre');
+        const conteneur = document.getElementById('modal-liste-fautes');
+
+        titre.textContent = `Tes erreurs sur "${devoir.devoirTitre}"`;
+
+        let html = `<table>
+            <thead>
+                <tr>
+                    <th>Phrase</th>
+                    <th>Ta réponse</th>
+                    <th>Bonne réponse</th>
+                </tr>
+            </thead>
+            <tbody>`;
+
+        devoir.fautesDetails.forEach(f => {
+            html += `
+                <tr>
+                    <td>${f.phrase}</td>
+                    <td style="color:var(--danger); font-weight:bold; text-decoration:line-through;">${f.reponseEleve || "(vide)"}</td>
+                    <td style="color:var(--success); font-weight:bold;">${f.attendu}</td>
+                </tr>
+            `;
+        });
+
+        html += `</tbody></table>`;
+        conteneur.innerHTML = html;
+        modal.style.display = "flex";
+    };
+
+    function fermerModalFautes() {
+        document.getElementById('modal-fautes-eleve').style.display = "none";
+    }
+
+    function retourTableauDeBord() {
+        document.getElementById('ecran-exercice').style.display = 'none';
+        document.getElementById('ecran-tableau-de-bord').style.display = 'block';
+    }
+
+    // Lancement
+    verifierSession();
+</script>
+</body>
+</html>
