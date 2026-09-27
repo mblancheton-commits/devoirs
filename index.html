@@ -240,6 +240,16 @@
         .mark-ok { color: var(--success); font-weight: bold; font-size: 1.3em; margin-left: 10px; }
         .mark-err { color: var(--danger); font-weight: bold; font-size: 1.1em; margin-left: 10px; }
 
+        /* BOUTON TERMINER */
+        .actions-fin-box {
+            text-align: center;
+            margin: 35px 0 20px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        }
+
         /* MODAL DES FAUTES ÉLÈVE */
         .modal {
             display: none;
@@ -352,16 +362,26 @@
 
         <div id="phrases-conteneur"></div>
 
+        <!-- BOUTON ENREGISTRER ET TERMINER LE DEVOIR -->
+        <div class="actions-fin-box" id="box-actions-fin">
+            <p style="margin-top:0; color:#555; font-size:0.95em;">Vous pouvez enregistrer vos réponses et envoyer votre devoir au professeur :</p>
+            <button class="btn btn-success" style="font-size: 1.1em; padding: 12px 28px;" onclick="terminerEtEnregistrerDevoir()">
+                💾 Sauvegarder et terminer le devoir
+            </button>
+        </div>
+
+        <!-- BOÎTE DE FIN (QUAND LE DEVOIR EST TERMINÉ) -->
         <div id="exo-termine-box" style="display:none; background:white; padding:30px; border-radius:10px; text-align:center; margin-top:20px; box-shadow:0 4px 10px rgba(0,0,0,0.06);">
-            <h2 style="color:var(--success); margin-top:0;">🎉 Bravo ! Devoir terminé !</h2>
-            <p>Ce devoir a été déplacé dans votre onglet <strong>« 🏆 Faits / Terminés »</strong>.</p>
-            <button class="btn btn-success" onclick="retourTableauDeBord()">Retourner à mes devoirs</button>
+            <h2 style="color:var(--success); margin-top:0;">🎉 Devoir terminé et enregistré !</h2>
+            <p id="recap-score-final" style="font-size: 1.15em; font-weight: bold; color: var(--primary);"></p>
+            <p style="color:#666;">Vos résultats et vos erreurs ont bien été transmis à votre professeur.</p>
+            <button class="btn btn-success" onclick="retourTableauDeBord()">Retourner à la liste de mes devoirs</button>
         </div>
     </div>
 
 </div>
 
-<!-- MODAL POUR REVOIR LES ERREURS D'UN DEVOIR FAIT -->
+<!-- MODAL POUR REVOIR LES ERREURS -->
 <div class="modal" id="modal-fautes-eleve">
     <div class="modal-content">
         <h2 id="modal-titre" style="margin-top:0; color:var(--primary);">Récapitulatif des erreurs</h2>
@@ -411,7 +431,7 @@
     ];
 
     let codeEleveActuel = localStorage.getItem("codeEleve") || "";
-    let devoirsChargesMap = {}; // Mémoire pour éviter les bugs d'apostrophes
+    let devoirsChargesMap = {};
     let devoirActuel = null;
     let assignationIdActuelle = null;
     let scoreActuel = 0;
@@ -470,22 +490,19 @@
         }
     }
 
-    // --- 3. CHARGEMENT DYNAMIQUE (ROBUSTE CONTRE LES APOSTROPHES) ---
+    // --- 3. CHARGEMENT DYNAMIQUE DES DEVOIRS ---
     function ecouterDevoirsEnDirect() {
         db.collection("assignations").onSnapshot(snapshot => {
             const tous = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             
-            // Enregistrer dans la mémoire globale
             devoirsChargesMap = {};
             tous.forEach(d => { devoirsChargesMap[d.id] = d; });
 
-            // Filtrer par code élève
             const mesDevoirs = tous.filter(d => d.eleveCode && d.eleveCode.toUpperCase() === codeEleveActuel.toUpperCase());
 
             const devoirsAFaire = mesDevoirs.filter(d => d.statut !== 'termine');
             const devoirsFaits = mesDevoirs.filter(d => d.statut === 'termine');
 
-            // Mettre à jour les badges
             document.getElementById('badge-nb-afaire').textContent = devoirsAFaire.length;
             document.getElementById('badge-nb-faits').textContent = devoirsFaits.length;
 
@@ -577,6 +594,10 @@
         document.getElementById('exo-score').textContent = scoreActuel;
         document.getElementById('exo-total').textContent = assignation.totalQuestions;
         document.getElementById('exo-erreurs').textContent = erreursActuelles;
+        
+        // Réafficher les éléments de l'exercice
+        document.getElementById('phrases-conteneur').style.display = 'block';
+        document.getElementById('box-actions-fin').style.display = 'block';
         document.getElementById('exo-termine-box').style.display = 'none';
 
         const conteneur = document.getElementById('phrases-conteneur');
@@ -591,7 +612,6 @@
             const num = idx + 1;
             const div = document.createElement('div');
             div.className = "phrase-box";
-            // Gère soit ____ soit ___
             const parts = p.q.includes('____') ? p.q.split('____') : p.q.split('___');
 
             if (p.type === 'select') {
@@ -666,15 +686,7 @@
             scoreActuel++;
             document.getElementById('exo-score').textContent = scoreActuel;
 
-            await synchroniserProgression();
-
-            if (scoreActuel === devoirActuel.totalQuestions) {
-                document.getElementById('exo-termine-box').style.display = 'block';
-                document.getElementById('exo-termine-box').scrollIntoView({ behavior: 'smooth' });
-                await db.collection("assignations").doc(assignationIdActuelle).update({
-                    statut: "termine"
-                });
-            }
+            await synchroniserProgression(false);
         } else {
             // FAUTE
             erreursActuelles++;
@@ -690,7 +702,7 @@
                 date: new Date().toLocaleTimeString("fr-FR")
             });
 
-            await synchroniserProgression();
+            await synchroniserProgression(false);
             declencherTaquinerie();
 
             input.focus();
@@ -698,17 +710,42 @@
         }
     }
 
-    async function synchroniserProgression() {
+    async function synchroniserProgression(forcerTermine) {
         if (!assignationIdActuelle) return;
 
-        const estFini = (scoreActuel === devoirActuel.totalQuestions);
+        const statutFinal = forcerTermine ? "termine" : "en_cours";
+
         await db.collection("assignations").doc(assignationIdActuelle).update({
-            statut: estFini ? "termine" : "en_cours",
+            statut: statutFinal,
             score: scoreActuel,
             totalErreurs: erreursActuelles,
             fautesDetails: fautesEnregistrees,
             dateDerniereActivite: firebase.firestore.FieldValue.serverTimestamp()
         });
+    }
+
+    // NOUVEAU : FONCTION DU BOUTON "SAUVEGARDER ET TERMINER"
+    async function terminerEtEnregistrerDevoir() {
+        if (!assignationIdActuelle) return;
+
+        const total = devoirActuel.totalQuestions;
+        const confirmation = confirm(`Voulez-vous vraiment terminer et envoyer ce devoir ?\n\nScore : ${scoreActuel} / ${total}\nFautes : ${erreursActuelles}`);
+        if (!confirmation) return;
+
+        try {
+            await synchroniserProgression(true);
+
+            // Cacher les questions et afficher l'écran de fin
+            document.getElementById('phrases-conteneur').style.display = 'none';
+            document.getElementById('box-actions-fin').style.display = 'none';
+
+            document.getElementById('recap-score-final').textContent = `Score obtenu : ${scoreActuel} / ${total} (Erreurs : ${erreursActuelles})`;
+            document.getElementById('exo-termine-box').style.display = 'block';
+            document.getElementById('exo-termine-box').scrollIntoView({ behavior: 'smooth' });
+
+        } catch (e) {
+            alert("Erreur lors de l'enregistrement : " + e.message);
+        }
     }
 
     function declencherTaquinerie() {
