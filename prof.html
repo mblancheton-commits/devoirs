@@ -87,6 +87,7 @@
         }
         .btn:hover { opacity: 0.9; }
         .btn-success { background: var(--success); }
+        .btn-danger { background: var(--danger); }
         .btn-sm { padding: 6px 10px; font-size: 0.85em; }
 
         /* Tableaux */
@@ -139,9 +140,9 @@
     </header>
 
     <div class="tabs">
-        <button class="tab-btn active" onclick="basculerOnglet('tab-eleves')">👥 Gestion des Élèves & Résultats</button>
-        <button class="tab-btn" onclick="basculerOnglet('tab-creer')">➕ Créer un Devoir</button>
-        <button class="tab-btn" onclick="basculerOnglet('tab-devoirs')">📚 Banque de Devoirs</button>
+        <button class="tab-btn active" id="btn-tab-eleves" onclick="basculerOnglet('tab-eleves', this)">👥 Gestion des Élèves & Résultats</button>
+        <button class="tab-btn" id="btn-tab-creer" onclick="basculerOnglet('tab-creer', this)">➕ Créer un Devoir</button>
+        <button class="tab-btn" id="btn-tab-devoirs" onclick="basculerOnglet('tab-devoirs', this)">📚 Banque de Devoirs</button>
     </div>
 
     <!-- ONGLET 1 : GESTION DES ÉLÈVES & SUIVI -->
@@ -149,13 +150,32 @@
         <div class="card">
             <h2>Créer un profil élève</h2>
             <div style="display: flex; gap: 10px;">
-                <input type="text" id="nouvel-eleve-nom" placeholder="Prénom et Nom de l'élève (ex: Lucas)">
+                <input type="text" id="nouvel-eleve-nom" placeholder="Prénom de l'élève (ex: Lucas)">
                 <button class="btn btn-success" onclick="creerEleve()">Ajouter l'élève</button>
             </div>
         </div>
 
+        <!-- TABLEAU DES ÉLÈVES INSCRITS -->
         <div class="card">
-            <h2>Devoirs assignés & Résultats détaillés</h2>
+            <h2>📋 Mes Élèves inscrits</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Prénom</th>
+                        <th>Code d'accès élève</th>
+                        <th>Date de création</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="table-eleves-corps">
+                    <tr><td colspan="4" style="text-align:center; color:#888;">Chargement des élèves...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TABLEAU DES DEVOIRS ASSIGNÉS ET FAUTES -->
+        <div class="card">
+            <h2>📊 Devoirs assignés & Résultats détaillés</h2>
             <table>
                 <thead>
                     <tr>
@@ -169,7 +189,7 @@
                     </tr>
                 </thead>
                 <tbody id="table-assignations-corps">
-                    <tr><td colspan="7" style="text-align:center; color:#888;">Chargement des données...</td></tr>
+                    <tr><td colspan="7" style="text-align:center; color:#888;">Aucun devoir assigné pour le moment.</td></tr>
                 </tbody>
             </table>
         </div>
@@ -235,12 +255,11 @@ He is waiting ____ the bus stop.;at</div>
                         <th>Titre</th>
                         <th>Type</th>
                         <th>Nb phrases</th>
-                        <th>Créé le</th>
-                        <th>Action</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="table-devoirs-corps">
-                    <tr><td colspan="5" style="text-align:center; color:#888;">Chargement...</td></tr>
+                    <tr><td colspan="4" style="text-align:center; color:#888;">Chargement...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -275,12 +294,20 @@ He is waiting ____ the bus stop.;at</div>
     let listeEleves = [];
     let listeDevoirs = [];
 
-    // --- 2. GESTION DES ONGLETS & FORMATS ---
-    function basculerOnglet(tabId) {
+    // --- 2. GESTION DES ONGLETS (CORRIGÉE SANS ERREUR TARGET) ---
+    function basculerOnglet(tabId, btnElement) {
         document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
         document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-        document.getElementById(tabId).style.display = 'block';
-        event.target.classList.add('active');
+        
+        const cible = document.getElementById(tabId);
+        if (cible) cible.style.display = 'block';
+
+        if (btnElement) {
+            btnElement.classList.add('active');
+        } else {
+            const boutonAuto = document.getElementById('btn-' + tabId);
+            if (boutonAuto) boutonAuto.classList.add('active');
+        }
     }
 
     function ajusterFormulaireCreation() {
@@ -319,11 +346,9 @@ He is waiting ____ the bus stop.;at</div>
             } else if (type === 'select-variable') {
                 const bonneReponse = parties[parties.length - 1];
                 const options = parties.slice(1, parties.length - 1);
-                // Si la bonne réponse n'est pas déjà dans les options, on l'ajoute
                 if (!options.includes(bonneReponse)) options.push(bonneReponse);
                 phrases.push({ q: q, type: 'select', options: options, a: [bonneReponse] });
             } else {
-                // Zone de texte (gère les variantes comme don't like|do not like)
                 const variantes = parties[1].split('|').map(v => v.trim());
                 phrases.push({ q: q, type: 'text', a: variantes });
             }
@@ -380,6 +405,8 @@ He is waiting ____ the bus stop.;at</div>
             document.getElementById('titre-devoir').value = "";
             document.getElementById('texte-brut-devoir').value = "";
             document.getElementById('card-previsualisation').style.display = "none";
+            
+            // Basculer vers l'onglet devoirs sans bug
             basculerOnglet('tab-devoirs');
         } catch(e) {
             alert("Erreur d'enregistrement : " + e.message);
@@ -393,23 +420,32 @@ He is waiting ____ the bus stop.;at</div>
 
         const codeUnique = nom.toUpperCase().replace(/\s+/g, '') + '-' + Math.floor(10 + Math.random() * 90);
 
-        await db.collection("eleves").add({
-            nom: nom,
-            code: codeUnique,
-            dateCreation: firebase.firestore.FieldValue.serverTimestamp()
-        });
+        try {
+            await db.collection("eleves").add({
+                nom: nom,
+                code: codeUnique,
+                dateCreation: firebase.firestore.FieldValue.serverTimestamp()
+            });
 
-        document.getElementById('nouvel-eleve-nom').value = "";
-        alert(`Élève créé ! Code d'accès : ${codeUnique}`);
+            document.getElementById('nouvel-eleve-nom').value = "";
+            alert(`✅ Élève ${nom} créé ! Code d'accès : ${codeUnique}`);
+        } catch(e) {
+            alert("Erreur lors de la création : " + e.message);
+        }
     }
 
-    // Assigner un devoir
+    async function supprimerEleve(id, nom) {
+        if (confirm(`Voulez-vous vraiment supprimer l'élève ${nom} ?`)) {
+            await db.collection("eleves").doc(id).delete();
+        }
+    }
+
     async function assignerDevoir(devoirId) {
         const devoir = listeDevoirs.find(d => d.id === devoirId);
         if (listeEleves.length === 0) return alert("Créez d'abord au moins un élève.");
 
         const optionsTexte = listeEleves.map((e, idx) => `${idx + 1}. ${e.nom} (${e.code})`).join('\n');
-        const choix = prompt(`À quel élève voulez-vous assigner "${devoir.titre}" ?\n\n${optionsTexte}\n\nTapez le numéro de l'élève :`);
+        const choix = prompt(`À quel élève assigner "${devoir.titre}" ?\n\n${optionsTexte}\n\nTapez le numéro correspondant :`);
         const num = parseInt(choix);
 
         if (num >= 1 && num <= listeEleves.length) {
@@ -422,7 +458,7 @@ He is waiting ____ the bus stop.;at</div>
                 devoirId: devoir.id,
                 devoirTitre: devoir.titre,
                 phrases: devoir.phrases,
-                statut: "non_commence", // non_commence, en_cours, termine
+                statut: "non_commence",
                 score: 0,
                 totalQuestions: devoir.phrases.length,
                 totalErreurs: 0,
@@ -431,24 +467,52 @@ He is waiting ____ the bus stop.;at</div>
             });
 
             alert(`✅ Devoir assigné à ${eleveChoisi.nom} !`);
+            basculerOnglet('tab-eleves');
         }
     }
 
-    // --- 6. ÉCOUTE TEMPS RÉEL FIRESTORE ---
+    // --- 6. ÉCOUTE TEMPS RÉEL DES DONNÉES ---
     function ecouterDonnees() {
         // 1. Liste des élèves
-        db.collection("eleves").orderBy("dateCreation", "desc").onSnapshot(snapshot => {
+        db.collection("eleves").onSnapshot(snapshot => {
             listeEleves = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            
+            // Trier par date
+            listeEleves.sort((a, b) => (b.dateCreation?.seconds || 0) - (a.dateCreation?.seconds || 0));
+
+            const tbody = document.getElementById('table-eleves-corps');
+            tbody.innerHTML = "";
+
+            if (listeEleves.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#888;">Aucun élève créé pour l'instant.</td></tr>`;
+                return;
+            }
+
+            listeEleves.forEach(e => {
+                const tr = document.createElement('tr');
+                const dateStr = e.dateCreation ? e.dateCreation.toDate().toLocaleDateString('fr-FR') : 'Aujourd\'hui';
+                tr.innerHTML = `
+                    <td><strong>${e.nom}</strong></td>
+                    <td><code style="font-size:1.1em; background:#edf2f7; padding:3px 8px; border-radius:4px; font-weight:bold; color:#2b6cb0;">${e.code}</code></td>
+                    <td>${dateStr}</td>
+                    <td>
+                        <button class="btn btn-danger btn-sm" onclick="supprimerEleve('${e.id}', '${e.nom}')">🗑️ Supprimer</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
         });
 
         // 2. Liste des devoirs
-        db.collection("devoirs").orderBy("dateCreation", "desc").onSnapshot(snapshot => {
+        db.collection("devoirs").onSnapshot(snapshot => {
             listeDevoirs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            listeDevoirs.sort((a, b) => (b.dateCreation?.seconds || 0) - (a.dateCreation?.seconds || 0));
+
             const tbody = document.getElementById('table-devoirs-corps');
             tbody.innerHTML = "";
 
             if (listeDevoirs.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#888;">Aucun devoir créé pour le moment.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#888;">Aucun devoir créé pour le moment.</td></tr>`;
                 return;
             }
 
@@ -458,9 +522,8 @@ He is waiting ____ the bus stop.;at</div>
                     <td><strong>${d.titre}</strong></td>
                     <td>${d.phrases[0]?.type === 'select' ? 'Menu déroulant' : 'Saisie texte'}</td>
                     <td>${d.phrases.length} phrases</td>
-                    <td>${d.dateCreation ? d.dateCreation.toDate().toLocaleDateString('fr-FR') : '-'}</td>
                     <td>
-                        <button class="btn btn-sm" onclick="assignerDevoir('${d.id}')">➕ Assigner à un élève</button>
+                        <button class="btn btn-sm btn-success" onclick="assignerDevoir('${d.id}')">➕ Assigner à un élève</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -468,17 +531,19 @@ He is waiting ____ the bus stop.;at</div>
         });
 
         // 3. Suivi des devoirs assignés & fautes
-        db.collection("assignations").orderBy("dateAssignation", "desc").onSnapshot(snapshot => {
+        db.collection("assignations").onSnapshot(snapshot => {
+            const assignations = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            assignations.sort((a, b) => (b.dateAssignation?.seconds || 0) - (a.dateAssignation?.seconds || 0));
+
             const tbody = document.getElementById('table-assignations-corps');
             tbody.innerHTML = "";
 
-            if (snapshot.empty) {
+            if (assignations.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#888;">Aucun devoir assigné.</td></tr>`;
                 return;
             }
 
-            snapshot.forEach(doc => {
-                const a = doc.data();
+            assignations.forEach(a => {
                 const tr = document.createElement('tr');
 
                 let badgeStatut = `<span class="badge badge-nonfait">Non commencé</span>`;
@@ -510,15 +575,14 @@ He is waiting ____ the bus stop.;at</div>
         titre.textContent = `Erreurs de ${assignation.eleveNom} - "${assignation.devoirTitre}"`;
 
         if (!assignation.fautesDetails || assignation.fautesDetails.length === 0) {
-            contenu.innerHTML = `<p style="color:var(--success); font-weight:bold;">🎉 Aucune faute enregistrée pour l'instant !</p>`;
+            contenu.innerHTML = `<p style="color:var(--success); font-weight:bold; padding:15px; text-align:center;">🎉 Aucune faute enregistrée pour l'instant !</p>`;
         } else {
             let html = `<table>
                 <thead>
                     <tr>
                         <th>Phrase</th>
-                        <th>Réponse tapée</th>
-                        <th>Attendu</th>
-                        <th>Heure</th>
+                        <th>Réponse de l'élève</th>
+                        <th>Bonne réponse</th>
                     </tr>
                 </thead>
                 <tbody>`;
@@ -529,7 +593,6 @@ He is waiting ____ the bus stop.;at</div>
                         <td>${f.phrase}</td>
                         <td style="color:var(--danger); font-weight:bold; text-decoration:line-through;">${f.reponseEleve || "(vide)"}</td>
                         <td style="color:var(--success); font-weight:bold;">${f.attendu}</td>
-                        <td style="font-size:0.85em; color:#888;">${f.date || "-"}</td>
                     </tr>
                 `;
             });
