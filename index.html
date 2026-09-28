@@ -410,16 +410,19 @@
             </div>
 
             <div class="lang-card" onclick="choisirLangue('en')">
-                <!-- Drapeau Anglais (Croix de Saint-Georges) -->
-                <svg class="flag-svg" viewBox="0 0 500 300">
-                    <rect width="500" height="300" fill="#ffffff"/>
-                    <rect x="215" width="70" height="300" fill="#ce1124"/>
-                    <rect y="115" width="500" height="70" fill="#ce1124"/>
+                <!-- Drapeau de la Grande-Bretagne (Union Jack) -->
+                <svg class="flag-svg" viewBox="0 0 60 30">
+                    <clipPath id="uk-flag">
+                        <path d="M30,15 h30 v15 z M30,15 v15 h-30 z M30,15 h-30 v-15 z M30,15 v-15 h30 z"/>
+                    </clipPath>
+                    <path d="M0,0 v30 h60 v-30 z" fill="#012169"/>
+                    <path d="M0,0 L60,30 M60,0 L0,30" stroke="#ffffff" stroke-width="6"/>
+                    <path d="M0,0 L60,30 M60,0 L0,30" clip-path="url(#uk-flag)" stroke="#c8102e" stroke-width="4"/>
+                    <path d="M30,0 v30 M0,15 h60" stroke="#ffffff" stroke-width="10"/>
+                    <path d="M30,0 v30 M0,15 h60" stroke="#c8102e" stroke-width="6"/>
                 </svg>
                 <span class="lang-title">English (Anglais)</span>
             </div>
-        </div>
-    </div>
 
     <!-- 1. CONNEXION -->
     <div id="ecran-login">
