@@ -70,7 +70,7 @@
         .btn-full { width: 100%; }
         .btn-success { background: var(--success); }
         .btn-warning { background: var(--warning); }
-        .btn-secondary { background: #718096; padding: 6px 12px; font-size: 0.85em; }
+        .btn-secondary { background: #718096; padding: 7px 14px; font-size: 0.9em; }
         .btn-sm { padding: 6px 12px; font-size: 0.88em; }
 
         /* EN-TÊTE ÉLÈVE CONNECTÉ */
@@ -240,14 +240,18 @@
         .mark-ok { color: var(--success); font-weight: bold; font-size: 1.3em; margin-left: 10px; }
         .mark-err { color: var(--danger); font-weight: bold; font-size: 1.1em; margin-left: 10px; }
 
-        /* BOUTON TERMINER */
+        /* BOÎTE D'ACTIONS EN BAS D'EXERCICE */
         .actions-fin-box {
-            text-align: center;
-            margin: 35px 0 20px 0;
-            padding: 20px;
+            margin: 30px 0 20px 0;
+            padding: 22px;
             background: white;
             border-radius: 10px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
         /* MODAL DES FAUTES ÉLÈVE */
@@ -351,7 +355,7 @@
     <div id="ecran-exercice">
         <div class="exo-header">
             <div>
-                <button class="btn btn-secondary" onclick="retourTableauDeBord()">← Retour aux devoirs</button>
+                <button class="btn btn-secondary" onclick="sauvegarderEtQuitter()">← Sauvegarder et quitter</button>
                 <h2 id="exo-titre" style="margin: 8px 0 0 0; color:var(--primary); font-size: 1.25em;">-</h2>
             </div>
             <div style="text-align:right;">
@@ -362,12 +366,18 @@
 
         <div id="phrases-conteneur"></div>
 
-        <!-- BOUTON ENREGISTRER ET TERMINER LE DEVOIR -->
+        <!-- DEUX BOUTONS DE SAUVEGARDE EN BAS -->
         <div class="actions-fin-box" id="box-actions-fin">
-            <p style="margin-top:0; color:#555; font-size:0.95em;">Vous pouvez enregistrer vos réponses et envoyer votre devoir au professeur :</p>
-            <button class="btn btn-success" style="font-size: 1.1em; padding: 12px 28px;" onclick="terminerEtEnregistrerDevoir()">
-                💾 Sauvegarder et terminer le devoir
-            </button>
+            <div>
+                <button class="btn btn-warning" onclick="sauvegarderEtQuitter()">
+                    💾 Sauvegarder et reprendre plus tard
+                </button>
+            </div>
+            <div>
+                <button class="btn btn-success" onclick="terminerEtEnregistrerDevoir()">
+                    ✅ Terminer et rendre mon devoir
+                </button>
+            </div>
         </div>
 
         <!-- BOÎTE DE FIN (QUAND LE DEVOIR EST TERMINÉ) -->
@@ -437,6 +447,7 @@
     let scoreActuel = 0;
     let erreursActuelles = 0;
     let fautesEnregistrees = [];
+    let reponsesValidees = {}; // Stocke les réponses déjà réussies { "0": "work", "1": "is crying" }
     let timerOverlay = null;
 
     // --- 2. GESTION DE LA SESSION ---
@@ -521,8 +532,9 @@
                     const card = document.createElement('div');
                     card.className = "devoir-card";
                     const estEnCours = (d.statut === 'en_cours');
+                    const nbTrouvees = d.score || 0;
                     const badgeHtml = estEnCours 
-                        ? `<span class="badge badge-encours">En cours (${d.score || 0}/${d.totalQuestions})</span>` 
+                        ? `<span class="badge badge-encours">En cours (${nbTrouvees}/${d.totalQuestions} trouvées)</span>` 
                         : `<span class="badge badge-afaire">Nouveau</span>`;
 
                     card.innerHTML = `
@@ -532,7 +544,7 @@
                         </div>
                         <div>
                             <button class="btn ${estEnCours ? 'btn-warning' : ''}" onclick="lancerExerciceParId('${d.id}')">
-                                ${estEnCours ? 'Continuer ▶' : 'Commencer ▶'}
+                                ${estEnCours ? 'Reprendre ▶' : 'Commencer ▶'}
                             </button>
                         </div>
                     `;
@@ -576,14 +588,17 @@
         });
     }
 
-    // --- 4. EXÉCUTION D'UN DEVOIR ---
+    // --- 4. EXÉCUTION D'UN DEVOIR AVEC REPRISE DE PROGRESSION ---
     function lancerExerciceParId(id) {
         const assignation = devoirsChargesMap[id];
         if (!assignation) return alert("Devoir introuvable.");
 
         devoirActuel = assignation;
         assignationIdActuelle = assignation.id;
-        scoreActuel = assignation.score || 0;
+        
+        // Récupérer les réponses déjà enregistrées
+        reponsesValidees = assignation.reponsesValidees || {};
+        scoreActuel = assignation.score || Object.keys(reponsesValidees).length;
         erreursActuelles = assignation.totalErreurs || 0;
         fautesEnregistrees = assignation.fautesDetails || [];
 
@@ -595,9 +610,8 @@
         document.getElementById('exo-total').textContent = assignation.totalQuestions;
         document.getElementById('exo-erreurs').textContent = erreursActuelles;
         
-        // Réafficher les éléments de l'exercice
         document.getElementById('phrases-conteneur').style.display = 'block';
-        document.getElementById('box-actions-fin').style.display = 'block';
+        document.getElementById('box-actions-fin').style.display = 'flex';
         document.getElementById('exo-termine-box').style.display = 'none';
 
         const conteneur = document.getElementById('phrases-conteneur');
@@ -608,213 +622,4 @@
             return;
         }
 
-        assignation.phrases.forEach((p, idx) => {
-            const num = idx + 1;
-            const div = document.createElement('div');
-            div.className = "phrase-box";
-            const parts = p.q.includes('____') ? p.q.split('____') : p.q.split('___');
-
-            if (p.type === 'select') {
-                let optionsHtml = `<option value="">---</option>` + p.options.map(o => `<option value="${o}">${o}</option>`).join('');
-                div.innerHTML = `
-                    <span class="phrase-num">${num}.</span>
-                    <span class="phrase-texte">
-                        ${parts[0]}
-                        <select class="champ-select" id="input-q-${idx}" onchange="verifierLigne(${idx})">
-                            ${optionsHtml}
-                        </select>
-                        <span id="fb-q-${idx}"></span>
-                        ${parts[1] || ""}
-                    </span>
-                `;
-            } else {
-                div.innerHTML = `
-                    <span class="phrase-num">${num}.</span>
-                    <span class="phrase-texte">
-                        ${parts[0]}
-                        <input type="text" class="champ-reponse" id="input-q-${idx}" placeholder="réponse..." autocomplete="off">
-                        <button class="btn-verifier" id="btn-q-${idx}" onclick="verifierLigne(${idx})">Vérifier</button>
-                        <span id="fb-q-${idx}"></span>
-                        ${parts[1] || ""}
-                    </span>
-                `;
-            }
-            conteneur.appendChild(div);
-
-            if (p.type === 'text') {
-                setTimeout(() => {
-                    const el = document.getElementById(`input-q-${idx}`);
-                    if (el) el.addEventListener('keypress', (e) => { if (e.key === 'Enter') verifierLigne(idx); });
-                }, 0);
-            }
-        });
-    }
-
-    async function recommencerDevoirParId(id) {
-        if (confirm("Veux-tu réinitialiser ce devoir pour le refaire depuis le début ?")) {
-            await db.collection("assignations").doc(id).update({
-                statut: "en_cours",
-                score: 0,
-                totalErreurs: 0,
-                fautesDetails: []
-            });
-            lancerExerciceParId(id);
-        }
-    }
-
-    async function verifierLigne(idx) {
-        const p = devoirActuel.phrases[idx];
-        const input = document.getElementById(`input-q-${idx}`);
-        const fb = document.getElementById(`fb-q-${idx}`);
-        const btn = document.getElementById(`btn-q-${idx}`);
-
-        if (input.disabled) return;
-
-        const saisie = input.value.trim().toLowerCase();
-        if (!saisie) return;
-
-        const bonnesReponses = p.a.map(a => a.trim().toLowerCase());
-
-        if (bonnesReponses.includes(saisie)) {
-            // BONNE RÉPONSE
-            input.classList.remove('incorrect-input');
-            input.classList.add('correct-input');
-            input.disabled = true;
-            if (btn) btn.disabled = true;
-            fb.innerHTML = '<span class="mark-ok">✓</span>';
-
-            scoreActuel++;
-            document.getElementById('exo-score').textContent = scoreActuel;
-
-            await synchroniserProgression(false);
-        } else {
-            // FAUTE
-            erreursActuelles++;
-            document.getElementById('exo-erreurs').textContent = erreursActuelles;
-            input.classList.add('incorrect-input');
-            fb.innerHTML = '<span class="mark-err">✗</span>';
-
-            const phraseCorrigee = p.q.includes('____') ? p.q.replace('____', `[${p.a.join('/')}]`) : p.q.replace('___', `[${p.a.join('/')}]`);
-            fautesEnregistrees.push({
-                phrase: phraseCorrigee,
-                reponseEleve: saisie,
-                attendu: p.a.join(' / '),
-                date: new Date().toLocaleTimeString("fr-FR")
-            });
-
-            await synchroniserProgression(false);
-            declencherTaquinerie();
-
-            input.focus();
-            if (p.type === 'text') input.select();
-        }
-    }
-
-    async function synchroniserProgression(forcerTermine) {
-        if (!assignationIdActuelle) return;
-
-        const statutFinal = forcerTermine ? "termine" : "en_cours";
-
-        await db.collection("assignations").doc(assignationIdActuelle).update({
-            statut: statutFinal,
-            score: scoreActuel,
-            totalErreurs: erreursActuelles,
-            fautesDetails: fautesEnregistrees,
-            dateDerniereActivite: firebase.firestore.FieldValue.serverTimestamp()
-        });
-    }
-
-    // NOUVEAU : FONCTION DU BOUTON "SAUVEGARDER ET TERMINER"
-    async function terminerEtEnregistrerDevoir() {
-        if (!assignationIdActuelle) return;
-
-        const total = devoirActuel.totalQuestions;
-        const confirmation = confirm(`Voulez-vous vraiment terminer et envoyer ce devoir ?\n\nScore : ${scoreActuel} / ${total}\nFautes : ${erreursActuelles}`);
-        if (!confirmation) return;
-
-        try {
-            await synchroniserProgression(true);
-
-            // Cacher les questions et afficher l'écran de fin
-            document.getElementById('phrases-conteneur').style.display = 'none';
-            document.getElementById('box-actions-fin').style.display = 'none';
-
-            document.getElementById('recap-score-final').textContent = `Score obtenu : ${scoreActuel} / ${total} (Erreurs : ${erreursActuelles})`;
-            document.getElementById('exo-termine-box').style.display = 'block';
-            document.getElementById('exo-termine-box').scrollIntoView({ behavior: 'smooth' });
-
-        } catch (e) {
-            alert("Erreur lors de l'enregistrement : " + e.message);
-        }
-    }
-
-    function declencherTaquinerie() {
-        let index = Math.min(erreursActuelles - 1, insultesPaliers.length - 1);
-        if (index < 0) index = 0;
-
-        const d = insultesPaliers[index];
-        const overlay = document.getElementById('punition-overlay');
-        const text = document.getElementById('punition-text');
-        const sub = document.getElementById('punition-sub');
-
-        text.textContent = d.kr;
-        sub.textContent = `${d.fr} (Faute n°${erreursActuelles})`;
-
-        text.style.animation = 'none';
-        text.offsetHeight;
-        text.style.animation = 'zoomTremble 0.4s ease-out';
-
-        overlay.classList.add('show');
-        if (timerOverlay) clearTimeout(timerOverlay);
-        timerOverlay = setTimeout(() => overlay.classList.remove('show'), 1300);
-    }
-
-    function revoirFautesParId(id) {
-        const devoir = devoirsChargesMap[id];
-        if (!devoir) return;
-
-        const modal = document.getElementById('modal-fautes-eleve');
-        const titre = document.getElementById('modal-titre');
-        const conteneur = document.getElementById('modal-liste-fautes');
-
-        titre.textContent = `Tes erreurs sur "${devoir.devoirTitre}"`;
-
-        let html = `<table>
-            <thead>
-                <tr>
-                    <th>Phrase</th>
-                    <th>Ta réponse</th>
-                    <th>Bonne réponse</th>
-                </tr>
-            </thead>
-            <tbody>`;
-
-        devoir.fautesDetails.forEach(f => {
-            html += `
-                <tr>
-                    <td>${f.phrase}</td>
-                    <td style="color:var(--danger); font-weight:bold; text-decoration:line-through;">${f.reponseEleve || "(vide)"}</td>
-                    <td style="color:var(--success); font-weight:bold;">${f.attendu}</td>
-                </tr>
-            `;
-        });
-
-        html += `</tbody></table>`;
-        conteneur.innerHTML = html;
-        modal.style.display = "flex";
-    }
-
-    function fermerModalFautes() {
-        document.getElementById('modal-fautes-eleve').style.display = "none";
-    }
-
-    function retourTableauDeBord() {
-        document.getElementById('ecran-exercice').style.display = 'none';
-        document.getElementById('ecran-tableau-de-bord').style.display = 'block';
-    }
-
-    // Lancement
-    verifierSession();
-</script>
-</body>
-</html>
+        assignation.phrases.forEa
