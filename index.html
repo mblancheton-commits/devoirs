@@ -400,7 +400,6 @@
                     <circle cx="450" cy="300" r="150" fill="#cd2e3a"/>
                     <path d="M 300,300 A 75,75 0 0,0 450,300 A 75,75 0 0,1 600,300 A 150,150 0 0,1 300,300 Z" fill="#0047a0"/>
                     <circle cx="375" cy="300" r="75" fill="#cd2e3a"/>
-                    <!-- Barres Kwae simplifiées -->
                     <rect x="180" y="140" width="20" height="90" fill="#000" transform="rotate(33.7 190 185)"/>
                     <rect x="210" y="140" width="20" height="90" fill="#000" transform="rotate(33.7 220 185)"/>
                     <rect x="670" y="370" width="20" height="90" fill="#000" transform="rotate(33.7 680 415)"/>
@@ -410,7 +409,7 @@
             </div>
 
             <div class="lang-card" onclick="choisirLangue('en')">
-                <!-- Drapeau de la Grande-Bretagne (Union Jack) -->
+                <!-- Drapeau Union Jack -->
                 <svg class="flag-svg" viewBox="0 0 60 30">
                     <clipPath id="uk-flag">
                         <path d="M30,15 h30 v15 z M30,15 v15 h-30 z M30,15 h-30 v-15 z M30,15 v-15 h30 z"/>
@@ -423,6 +422,8 @@
                 </svg>
                 <span class="lang-title">English (Anglais)</span>
             </div>
+        </div>
+    </div>
 
     <!-- 1. CONNEXION -->
     <div id="ecran-login">
@@ -848,7 +849,6 @@
 
     // --- 4. GESTION DE LA SESSION & NAVIGATION ---
     window.verifierSession = function() {
-        // 0. Si aucune langue sélectionnée -> Écran Langue
         if (!langueActuelle) {
             retourChoixLangue();
             return;
@@ -856,7 +856,6 @@
 
         document.getElementById('ecran-langue').style.display = 'none';
 
-        // 1. Si pas de code élève -> Écran Login
         if (!codeEleveActuel) {
             document.getElementById('ecran-login').style.display = 'block';
             document.getElementById('ecran-bienvenue').style.display = 'none';
@@ -866,7 +865,6 @@
             return;
         }
 
-        // Si déjà identifié et pas sur exercice : ouvrir le tableau de bord
         document.getElementById('ecran-login').style.display = 'none';
         document.getElementById('header-eleve').style.display = 'flex';
         document.getElementById('affichage-code-eleve').textContent = codeEleveActuel;
@@ -883,7 +881,6 @@
         codeEleveActuel = saisie;
         try { localStorage.setItem("codeEleve", codeEleveActuel); } catch(e) {}
 
-        // Afficher l'écran de bienvenue avec la coche "doux"
         document.getElementById('ecran-login').style.display = 'none';
         document.getElementById('bienvenue-nom-user').textContent = codeEleveActuel;
         
@@ -1276,7 +1273,7 @@
         const sub = document.getElementById('punition-sub');
         const t = i18n[langueActuelle || 'fr'];
 
-        // CAS 1 : MODE DOUX ACTIVÉ ("sois doux avec moi aujourd'hui")
+        // CAS 1 : MODE DOUX ACTIVÉ
         if (modeDouxActif) {
             overlay.classList.add('mode-gentil');
             text.textContent = t.gentle_wrong;
