@@ -28,10 +28,48 @@
         }
         .container { max-width: 900px; margin: 0 auto; }
         
+        /* 0. ÉCRAN CHOIX DE LA LANGUE */
+        #ecran-langue {
+            max-width: 520px;
+            margin: 70px auto;
+            background: white;
+            padding: 35px 30px;
+            border-radius: 14px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+        #ecran-langue h1 { color: var(--primary); margin-top: 0; font-size: 1.8em; margin-bottom: 25px; }
+        .lang-grid { display: flex; flex-direction: column; gap: 14px; }
+        .lang-card {
+            display: flex;
+            align-items: center;
+            padding: 14px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+        }
+        .lang-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.15);
+        }
+        .flag-svg {
+            width: 46px;
+            height: 32px;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            margin-right: 18px;
+            flex-shrink: 0;
+        }
+        .lang-title { font-size: 1.15em; font-weight: bold; color: var(--primary); }
+
         /* 1. ÉCRAN DE CONNEXION */
         #ecran-login {
+            display: none;
             max-width: 440px;
-            margin: 80px auto;
+            margin: 70px auto;
             background: white;
             padding: 35px;
             border-radius: 12px;
@@ -54,6 +92,42 @@
         }
         #code-input:focus { outline: none; border-color: var(--accent); }
 
+        /* 1.5 ÉCRAN DE BIENVENUE */
+        #ecran-bienvenue {
+            display: none;
+            max-width: 480px;
+            margin: 70px auto;
+            background: white;
+            padding: 35px 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+        #ecran-bienvenue h1 { color: var(--primary); margin-top: 0; }
+        .welcome-user-box {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: var(--accent);
+            background: #ebf8ff;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 15px 0 25px 0;
+        }
+        .soft-mode-card {
+            background: #f7fafc;
+            border: 2px dashed #cbd5e0;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            text-align: left;
+        }
+        .soft-mode-card input { width: 20px; height: 20px; cursor: pointer; }
+        .soft-mode-card label { cursor: pointer; font-weight: 600; color: #4a5568; font-size: 1em; }
+
         .btn {
             background: var(--accent);
             color: white;
@@ -67,7 +141,7 @@
             display: inline-block;
         }
         .btn:hover { opacity: 0.9; transform: translateY(-1px); }
-        .btn-full { width: 100%; }
+        .btn-full { width: 100%; box-sizing: border-box; }
         .btn-success { background: var(--success); }
         .btn-warning { background: var(--warning); }
         .btn-secondary { background: #718096; padding: 7px 14px; font-size: 0.9em; }
@@ -77,7 +151,7 @@
         #header-eleve {
             display: none;
             background: white;
-            padding: 15px 25px;
+            padding: 14px 22px;
             border-radius: 10px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.05);
             margin-bottom: 25px;
@@ -86,15 +160,11 @@
             flex-wrap: wrap;
             gap: 10px;
         }
-        .info-profil { font-size: 1.1em; color: #4a5568; }
+        .info-profil { font-size: 1.05em; color: #4a5568; }
 
         /* ONGLETS "À FAIRE" / "FAITS" */
         #ecran-tableau-de-bord { display: none; }
-        .tabs-nav {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
+        .tabs-nav { display: flex; gap: 12px; margin-bottom: 20px; }
         .tab-btn {
             flex: 1;
             padding: 14px;
@@ -123,13 +193,8 @@
             border-radius: 12px;
             font-size: 0.85em;
         }
-        .tab-btn.active .tab-badge {
-            background: white;
-            color: var(--primary);
-            font-weight: bold;
-        }
+        .tab-btn.active .tab-badge { background: white; color: var(--primary); font-weight: bold; }
 
-        /* CARTES DE DEVOIRS */
         .tab-panel { display: none; }
         .tab-panel.active { display: block; }
 
@@ -170,7 +235,7 @@
         }
         .empty-state-icon { font-size: 2.8em; margin-bottom: 10px; }
 
-        /* 3. ÉCRAN DE L'EXERCICE */
+        /* ÉCRAN DE L'EXERCICE */
         #ecran-exercice { display: none; }
         .exo-header {
             background: white;
@@ -240,7 +305,6 @@
         .mark-ok { color: var(--success); font-weight: bold; font-size: 1.3em; margin-left: 10px; }
         .mark-err { color: var(--danger); font-weight: bold; font-size: 1.1em; margin-left: 10px; }
 
-        /* BOÎTE D'ACTIONS EN BAS D'EXERCICE */
         .actions-fin-box {
             margin: 30px 0 20px 0;
             padding: 22px;
@@ -254,7 +318,6 @@
             gap: 15px;
         }
 
-        /* MODAL DES FAUTES ÉLÈVE */
         .modal {
             display: none;
             position: fixed;
@@ -274,7 +337,7 @@
         th, td { padding: 10px; text-align: left; border-bottom: 1px solid #edf2f7; }
         th { background: #edf2f7; color: #4a5568; }
 
-        /* OVERLAY TAQUINERIES CORÉENNES */
+        /* OVERLAY TAQUINERIES */
         #punition-overlay {
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
@@ -286,19 +349,24 @@
             transition: opacity 0.15s ease;
         }
         #punition-overlay.show { opacity: 1; pointer-events: auto; }
+        #punition-overlay.mode-gentil {
+            background-color: rgba(52, 73, 94, 0.95) !important;
+        }
         #punition-text {
             font-family: 'Impact', 'Arial Black', sans-serif;
             color: #ffffff;
-            font-size: 16vw;
-            line-height: 1;
+            font-size: 15vw;
+            line-height: 1.1;
             text-shadow: 8px 8px 0px rgba(0,0,0,0.35);
             animation: zoomTremble 0.4s ease-out;
             user-select: none;
             text-align: center;
+            padding: 0 20px;
         }
         #punition-sub {
-            color: #ffeaa7; font-size: 2.2vw; font-weight: bold;
-            margin-top: 15px; text-transform: uppercase;
+            color: #ffeaa7; font-size: 2.4vw; font-weight: bold;
+            margin-top: 18px; text-transform: uppercase; text-align: center;
+            padding: 0 20px;
         }
         @keyframes zoomTremble {
             0% { transform: scale(0.2) rotate(-15deg); }
@@ -311,28 +379,89 @@
 
 <div class="container">
 
+    <!-- 0. ÉCRAN CHOIX DE LA LANGUE -->
+    <div id="ecran-langue">
+        <h1 id="txt-select-lang">Choisissez votre langue</h1>
+        <div class="lang-grid">
+            <div class="lang-card" onclick="choisirLangue('fr')">
+                <!-- Drapeau Français -->
+                <svg class="flag-svg" viewBox="0 0 900 600">
+                    <rect width="300" height="600" fill="#002395"/>
+                    <rect x="300" width="300" height="600" fill="#ffffff"/>
+                    <rect x="600" width="300" height="600" fill="#ed2939"/>
+                </svg>
+                <span class="lang-title">Français</span>
+            </div>
+
+            <div class="lang-card" onclick="choisirLangue('ko')">
+                <!-- Drapeau Coréen -->
+                <svg class="flag-svg" viewBox="0 0 900 600">
+                    <rect width="900" height="600" fill="#ffffff"/>
+                    <circle cx="450" cy="300" r="150" fill="#cd2e3a"/>
+                    <path d="M 300,300 A 75,75 0 0,0 450,300 A 75,75 0 0,1 600,300 A 150,150 0 0,1 300,300 Z" fill="#0047a0"/>
+                    <circle cx="375" cy="300" r="75" fill="#cd2e3a"/>
+                    <!-- Barres Kwae simplifiées -->
+                    <rect x="180" y="140" width="20" height="90" fill="#000" transform="rotate(33.7 190 185)"/>
+                    <rect x="210" y="140" width="20" height="90" fill="#000" transform="rotate(33.7 220 185)"/>
+                    <rect x="670" y="370" width="20" height="90" fill="#000" transform="rotate(33.7 680 415)"/>
+                    <rect x="700" y="370" width="20" height="90" fill="#000" transform="rotate(33.7 710 415)"/>
+                </svg>
+                <span class="lang-title">한국어 (Coréen)</span>
+            </div>
+
+            <div class="lang-card" onclick="choisirLangue('en')">
+                <!-- Drapeau Anglais (Croix de Saint-Georges) -->
+                <svg class="flag-svg" viewBox="0 0 500 300">
+                    <rect width="500" height="300" fill="#ffffff"/>
+                    <rect x="215" width="70" height="300" fill="#ce1124"/>
+                    <rect y="115" width="500" height="70" fill="#ce1124"/>
+                </svg>
+                <span class="lang-title">English (Anglais)</span>
+            </div>
+        </div>
+    </div>
+
     <!-- 1. CONNEXION -->
     <div id="ecran-login">
-        <h1>👋 Espace Devoirs</h1>
-        <p>Entrez votre code élève pour accéder à vos exercices :</p>
+        <h1 id="txt-login-title">👋 Espace Devoirs</h1>
+        <p id="txt-login-desc">Entrez votre code élève pour accéder à vos exercices :</p>
         <input type="text" id="code-input" placeholder="EX: LUCAS01" autocomplete="off">
-        <button type="button" class="btn btn-full" onclick="seConnecter()">Voir mes devoirs</button>
+        <button type="button" class="btn btn-full" id="btn-login" onclick="seConnecter()">Voir mes devoirs</button>
+        <div style="margin-top:15px;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="retourChoixLangue()">🌐 Langue / 언어 / Language</button>
+        </div>
+    </div>
+
+    <!-- 1.5 BIENVENUE -->
+    <div id="ecran-bienvenue">
+        <h1 id="txt-welcome-heading">Bienvenue !</h1>
+        <div class="welcome-user-box" id="bienvenue-nom-user">-</div>
+        
+        <div class="soft-mode-card" onclick="toggleSoftMode()">
+            <input type="checkbox" id="check-soft-mode" onclick="event.stopPropagation()">
+            <label for="check-soft-mode" id="txt-soft-mode">Sois doux avec moi aujourd'hui 😇</label>
+        </div>
+
+        <button type="button" class="btn btn-full btn-success" id="btn-continue-welcome" onclick="validerBienvenue()">Continuer ▶</button>
     </div>
 
     <!-- EN-TÊTE ÉLÈVE CONNECTÉ -->
     <div id="header-eleve">
-        <div class="info-profil">Élève : <strong id="affichage-code-eleve" style="color:var(--accent);">-</strong></div>
-        <button type="button" class="btn btn-secondary" onclick="deconnexion()">Changer de compte</button>
+        <div class="info-profil"><span id="txt-logged-as">Élève :</span> <strong id="affichage-code-eleve" style="color:var(--accent);">-</strong></div>
+        <div style="display:flex; gap:8px;">
+            <button type="button" class="btn btn-secondary" onclick="retourChoixLangue()">🌐</button>
+            <button type="button" class="btn btn-secondary" id="btn-logout" onclick="deconnexion()">Changer de compte</button>
+        </div>
     </div>
 
     <!-- 2. TABLEAU DE BORD DYNAMIQUE -->
     <div id="ecran-tableau-de-bord">
         <div class="tabs-nav">
             <button type="button" class="tab-btn active" id="btn-tab-afaire" onclick="changerOngletDevoirs('afaire')">
-                ⏳ À faire <span class="tab-badge" id="badge-nb-afaire">0</span>
+                <span id="txt-tab-afaire">⏳ À faire</span> <span class="tab-badge" id="badge-nb-afaire">0</span>
             </button>
             <button type="button" class="tab-btn" id="btn-tab-faits" onclick="changerOngletDevoirs('faits')">
-                🏆 Faits / Terminés <span class="tab-badge" id="badge-nb-faits">0</span>
+                <span id="txt-tab-faits">🏆 Faits / Terminés</span> <span class="tab-badge" id="badge-nb-faits">0</span>
             </button>
         </div>
 
@@ -355,12 +484,12 @@
     <div id="ecran-exercice">
         <div class="exo-header">
             <div>
-                <button type="button" class="btn btn-secondary" onclick="sauvegarderEtQuitter()">← Sauvegarder et quitter</button>
+                <button type="button" class="btn btn-secondary" id="btn-save-quit" onclick="sauvegarderEtQuitter()">← Sauvegarder et quitter</button>
                 <h2 id="exo-titre" style="margin: 8px 0 0 0; color:var(--primary); font-size: 1.25em;">-</h2>
             </div>
             <div style="text-align:right;">
-                <div style="font-weight:bold; color:var(--success); font-size: 1.2em;">Score : <span id="exo-score">0</span> / <span id="exo-total">0</span></div>
-                <div style="font-size:0.9em; color:var(--danger); font-weight:bold;">Erreurs : <span id="exo-erreurs">0</span></div>
+                <div style="font-weight:bold; color:var(--success); font-size: 1.2em;"><span id="txt-score-label">Score :</span> <span id="exo-score">0</span> / <span id="exo-total">0</span></div>
+                <div style="font-size:0.9em; color:var(--danger); font-weight:bold;"><span id="txt-errors-label">Erreurs :</span> <span id="exo-erreurs">0</span></div>
             </div>
         </div>
 
@@ -369,12 +498,12 @@
         <!-- DEUX BOUTONS DE SAUVEGARDE EN BAS -->
         <div class="actions-fin-box" id="box-actions-fin">
             <div>
-                <button type="button" class="btn btn-warning" onclick="sauvegarderEtQuitter()">
+                <button type="button" class="btn btn-warning" id="btn-save-later" onclick="sauvegarderEtQuitter()">
                     💾 Sauvegarder et reprendre plus tard
                 </button>
             </div>
             <div>
-                <button type="button" class="btn btn-success" onclick="terminerEtEnregistrerDevoir()">
+                <button type="button" class="btn btn-success" id="btn-submit-final" onclick="terminerEtEnregistrerDevoir()">
                     ✅ Terminer et rendre mon devoir
                 </button>
             </div>
@@ -382,10 +511,10 @@
 
         <!-- BOÎTE DE FIN -->
         <div id="exo-termine-box" style="display:none; background:white; padding:30px; border-radius:10px; text-align:center; margin-top:20px; box-shadow:0 4px 10px rgba(0,0,0,0.06);">
-            <h2 style="color:var(--success); margin-top:0;">🎉 Devoir terminé et enregistré !</h2>
+            <h2 style="color:var(--success); margin-top:0;" id="txt-finish-heading">🎉 Devoir terminé et enregistré !</h2>
             <p id="recap-score-final" style="font-size: 1.15em; font-weight: bold; color: var(--primary);"></p>
-            <p style="color:#666;">Vos résultats et vos erreurs ont bien été transmis à votre professeur.</p>
-            <button type="button" class="btn btn-success" onclick="retourTableauDeBord()">Retourner à la liste de mes devoirs</button>
+            <p style="color:#666;" id="txt-finish-desc">Vos résultats et vos erreurs ont bien été transmis à votre professeur.</p>
+            <button type="button" class="btn btn-success" id="btn-back-home" onclick="retourTableauDeBord()">Retourner à la liste de mes devoirs</button>
         </div>
     </div>
 
@@ -397,12 +526,12 @@
         <h2 id="modal-titre" style="margin-top:0; color:var(--primary);">Récapitulatif des erreurs</h2>
         <div id="modal-liste-fautes"></div>
         <div style="text-align:right; margin-top:20px;">
-            <button type="button" class="btn btn-secondary" onclick="fermerModalFautes()">Fermer</button>
+            <button type="button" class="btn btn-secondary" id="btn-modal-close" onclick="fermerModalFautes()">Fermer</button>
         </div>
     </div>
 </div>
 
-<!-- OVERLAY TAQUINERIES CORÉENNES -->
+<!-- OVERLAY TAQUINERIES -->
 <div id="punition-overlay">
     <div id="punition-text">바보!</div>
     <div id="punition-sub">Niveau 1 : Ça commence mal...</div>
@@ -429,7 +558,153 @@
         console.error("Erreur init Firebase élève :", e);
     }
 
-    const insultesPaliers = [
+    // --- 2. TRADUCTIONS ET TEXTES MULTILINGUES ---
+    const i18n = {
+        fr: {
+            select_lang: "Choisissez votre langue",
+            login_title: "👋 Espace Devoirs",
+            login_desc: "Entrez votre code élève pour accéder à vos exercices :",
+            login_placeholder: "EX: LUCAS01",
+            login_btn: "Voir mes devoirs",
+            welcome_heading: "Bienvenue !",
+            soft_mode: "Sois doux avec moi aujourd'hui 😇",
+            continue_btn: "Continuer ▶",
+            logged_as: "Élève :",
+            logout_btn: "Changer de compte",
+            tab_afaire: "⏳ À faire",
+            tab_faits: "🏆 Faits / Terminés",
+            empty_afaire_title: "Tout est à jour !",
+            empty_afaire_desc: "Tu n'as aucun devoir en attente pour le moment.",
+            empty_faits_title: "Pas encore de devoirs terminés",
+            empty_faits_desc: "Tes devoirs validés apparaîtront ici avec tes notes.",
+            badge_new: "Nouveau",
+            badge_progress: "En cours",
+            badge_done: "Terminé ✓",
+            phrases_count: "phrases",
+            found_count: "trouvées",
+            btn_start: "Commencer ▶",
+            btn_resume: "Reprendre ▶",
+            btn_review: "🔍 Revoir mes fautes",
+            btn_redo: "🔄 Refaire",
+            btn_save_quit: "← Sauvegarder et quitter",
+            score_label: "Score :",
+            errors_label: "Erreurs :",
+            btn_verify: "Vérifier",
+            btn_save_later: "💾 Sauvegarder et reprendre plus tard",
+            btn_submit: "✅ Terminer et rendre mon devoir",
+            finish_heading: "🎉 Devoir terminé et enregistré !",
+            finish_desc: "Vos résultats et vos erreurs ont bien été transmis à votre professeur.",
+            btn_back_home: "Retourner à la liste de mes devoirs",
+            saved_alert: "💾 Progression sauvegardée ! Tu pourras reprendre ce devoir quand tu veux.",
+            confirm_submit: "Voulez-vous vraiment terminer et envoyer ce devoir ?",
+            confirm_redo: "Veux-tu réinitialiser ce devoir et le recommencer de zéro ?",
+            recap_mistakes_title: "Tes erreurs sur",
+            th_sentence: "Phrase",
+            th_your_answer: "Ta réponse",
+            th_correct_answer: "Bonne réponse",
+            btn_close: "Fermer",
+            gentle_wrong: "Mauvaise réponse",
+            gentle_sub: "Ce n'est pas grave, continue !",
+            mistake_count_sub: "Faute n°"
+        },
+        ko: {
+            select_lang: "언어를 선택하세요",
+            login_title: "👋 숙제 공간",
+            login_desc: "과제를 확인하려면 학생 코드를 입력하세요:",
+            login_placeholder: "예: LUCAS01",
+            login_btn: "내 과제 보기",
+            welcome_heading: "환영합니다!",
+            soft_mode: "오늘은 살살해 줘 😇",
+            continue_btn: "계속하기 ▶",
+            logged_as: "학생 :",
+            logout_btn: "계정 변경",
+            tab_afaire: "⏳ 해야 할 과제",
+            tab_faits: "🏆 완료된 과제",
+            empty_afaire_title: "모두 완료되었습니다!",
+            empty_afaire_desc: "현재 대기 중인 과제가 없습니다.",
+            empty_faits_title: "아직 완료된 과제가 없습니다",
+            empty_faits_desc: "완료한 과제가 점수와 함께 여기에 표시됩니다.",
+            badge_new: "새 과제",
+            badge_progress: "진행 중",
+            badge_done: "완료됨 ✓",
+            phrases_count: "문항",
+            found_count: "완료",
+            btn_start: "시작하기 ▶",
+            btn_resume: "이어하기 ▶",
+            btn_review: "🔍 오답 노트",
+            btn_redo: "🔄 다시 풀기",
+            btn_save_quit: "← 저장하고 나가기",
+            score_label: "점수 :",
+            errors_label: "오답 :",
+            btn_verify: "확인",
+            btn_save_later: "💾 저장하고 나중에 하기",
+            btn_submit: "✅ 과제 제출하기",
+            finish_heading: "🎉 과제 제출 완료!",
+            finish_desc: "결과와 오답 내역이 선생님께 전송되었습니다.",
+            btn_back_home: "과제 목록으로 돌아가기",
+            saved_alert: "💾 진행 상황이 저장되었습니다! 언제든 다시 이어할 수 있습니다.",
+            confirm_submit: "정말로 과제를 최종 제출하시겠습니까?",
+            confirm_redo: "이 과제를 처음부터 다시 시작하시겠습니까?",
+            recap_mistakes_title: "오답 내역:",
+            th_sentence: "문장",
+            th_your_answer: "내 답변",
+            th_correct_answer: "정답",
+            btn_close: "닫기",
+            gentle_wrong: "오답입니다",
+            gentle_sub: "괜찮아요, 다시 도전해보세요!",
+            mistake_count_sub: "오답 "
+        },
+        en: {
+            select_lang: "Choose your language",
+            login_title: "👋 Homework Portal",
+            login_desc: "Enter your student code to access your assignments:",
+            login_placeholder: "EX: LUCAS01",
+            login_btn: "View my homework",
+            welcome_heading: "Welcome!",
+            soft_mode: "Go easy on me today 😇",
+            continue_btn: "Continue ▶",
+            logged_as: "Student:",
+            logout_btn: "Switch account",
+            tab_afaire: "⏳ To Do",
+            tab_faits: "🏆 Completed",
+            empty_afaire_title: "All caught up!",
+            empty_afaire_desc: "You have no pending assignments right now.",
+            empty_faits_title: "No completed assignments yet",
+            empty_faits_desc: "Your graded assignments will appear here.",
+            badge_new: "New",
+            badge_progress: "In progress",
+            badge_done: "Done ✓",
+            phrases_count: "sentences",
+            found_count: "completed",
+            btn_start: "Start ▶",
+            btn_resume: "Resume ▶",
+            btn_review: "🔍 Review mistakes",
+            btn_redo: "🔄 Redo",
+            btn_save_quit: "← Save & Exit",
+            score_label: "Score:",
+            errors_label: "Errors:",
+            btn_verify: "Check",
+            btn_save_later: "💾 Save & resume later",
+            btn_submit: "✅ Submit homework",
+            finish_heading: "🎉 Homework submitted!",
+            finish_desc: "Your score and errors have been sent to your teacher.",
+            btn_back_home: "Back to my assignments",
+            saved_alert: "💾 Progress saved! You can resume this homework anytime.",
+            confirm_submit: "Do you really want to submit this homework?",
+            confirm_redo: "Do you want to reset this homework and start over?",
+            recap_mistakes_title: "Your mistakes on",
+            th_sentence: "Sentence",
+            th_your_answer: "Your answer",
+            th_correct_answer: "Correct answer",
+            btn_close: "Close",
+            gentle_wrong: "Wrong answer",
+            gentle_sub: "Don't worry, keep going!",
+            mistake_count_sub: "Mistake #"
+        }
+    };
+
+    // Moqueries pour Français et Coréen (d'origine)
+    const insultesOriginales = [
         { kr: "메롱~ 😜", fr: "Nananère ! Raté !" },
         { kr: "바보야~ 🙃", fr: "Petit idiot mignon !" },
         { kr: "땡! 🔔❌", fr: "Buzzer ! Mauvaise pioche !" },
@@ -447,10 +722,28 @@
         { kr: "슈퍼 바보! 🦸‍♂️💥", fr: "Niveau Ultime : Super Babo !" }
     ];
 
-    let codeEleveActuel = "";
-    try {
-        codeEleveActuel = localStorage.getItem("codeEleve") || "";
-    } catch(e) {}
+    // Moqueries pour Anglais (Anglais en grand + Français en sous-titre)
+    const insultesAnglaises = [
+        { en: "Nyah nyah! 😜", fr: "Nananère ! Raté !" },
+        { en: "Silly goose! 🪿", fr: "Petit nigaud mignon !" },
+        { en: "Buzzer! 🔔❌", fr: "Buzzer ! Mauvaise pioche !" },
+        { en: "Cheeky rascal! 🐶", fr: "Petit fripon !" },
+        { en: "Oopsie daisy! 🤦", fr: "Quelle boulette !" },
+        { en: "Need a nap? 😴💤", fr: "Besoin d'une sieste ?" },
+        { en: "Finger slipped? ✋", fr: "Ta main a glissé, avoue ?" },
+        { en: "Where're your eyes? 👀", fr: "Où as-tu mis tes yeux ?" },
+        { en: "Troublemaker! 😈", fr: "Espèce de garnement !" },
+        { en: "Brain on break? 🧠☕", fr: "Cerveau en pause café ?" },
+        { en: "Is your head decor? 👒", fr: "Ta tête, c'est pour faire joli ?" },
+        { en: "Don't cry! 🥺", fr: "Ne pleure pas, tu vas y arriver !" },
+        { en: "Daydreaming? 🦄", fr: "Tu es en plein rêve éveillé ?" },
+        { en: "Come on now~ 😅", fr: "Sérieusement, qu'est-ce que tu fais ?" },
+        { en: "Super Dunce! 🦸‍♂️💥", fr: "Niveau Ultime : Super Nigaud !" }
+    ];
+
+    let langueActuelle = localStorage.getItem("langEleve") || "";
+    let codeEleveActuel = localStorage.getItem("codeEleve") || "";
+    let modeDouxActif = (localStorage.getItem("modeDouxEleve") === "true");
 
     let devoirsChargesMap = {};
     let devoirActuel = null;
@@ -461,46 +754,163 @@
     let reponsesValidees = {};
     let timerOverlay = null;
 
-    // --- 2. GESTION DE LA SESSION ---
-    window.verifierSession = function() {
-        const ecranLogin = document.getElementById('ecran-login');
-        const headerEleve = document.getElementById('header-eleve');
-        const affichageCode = document.getElementById('affichage-code-eleve');
-        const ecranTableau = document.getElementById('ecran-tableau-de-bord');
-        const ecranExercice = document.getElementById('ecran-exercice');
+    // --- 3. GESTION DES LANGUES ---
+    window.choisirLangue = function(lang) {
+        langueActuelle = lang;
+        try { localStorage.setItem("langEleve", lang); } catch(e) {}
+        appliquerLangue();
+        verifierSession();
+    };
 
-        if (codeEleveActuel) {
-            if (ecranLogin) ecranLogin.style.display = 'none';
-            if (headerEleve) headerEleve.style.display = 'flex';
-            if (affichageCode) affichageCode.textContent = codeEleveActuel;
-            if (ecranTableau) ecranTableau.style.display = 'block';
-            if (ecranExercice) ecranExercice.style.display = 'none';
-            ecouterDevoirsEnDirect();
-        } else {
-            if (ecranLogin) ecranLogin.style.display = 'block';
-            if (headerEleve) headerEleve.style.display = 'none';
-            if (ecranTableau) ecranTableau.style.display = 'none';
-            if (ecranExercice) ecranExercice.style.display = 'none';
+    window.retourChoixLangue = function() {
+        document.getElementById('ecran-langue').style.display = 'block';
+        document.getElementById('ecran-login').style.display = 'none';
+        document.getElementById('ecran-bienvenue').style.display = 'none';
+        document.getElementById('header-eleve').style.display = 'none';
+        document.getElementById('ecran-tableau-de-bord').style.display = 'none';
+        document.getElementById('ecran-exercice').style.display = 'none';
+    };
+
+    function appliquerLangue() {
+        const lang = langueActuelle || 'fr';
+        const t = i18n[lang] || i18n.fr;
+
+        // Textes Écran Langue & Login
+        const elSelect = document.getElementById('txt-select-lang');
+        if (elSelect) elSelect.textContent = t.select_lang;
+
+        const elLogTitle = document.getElementById('txt-login-title');
+        if (elLogTitle) elLogTitle.textContent = t.login_title;
+
+        const elLogDesc = document.getElementById('txt-login-desc');
+        if (elLogDesc) elLogDesc.textContent = t.login_desc;
+
+        const elCodeInput = document.getElementById('code-input');
+        if (elCodeInput) elCodeInput.placeholder = t.login_placeholder;
+
+        const elBtnLogin = document.getElementById('btn-login');
+        if (elBtnLogin) elBtnLogin.textContent = t.login_btn;
+
+        // Textes Écran Bienvenue
+        const elWelcHead = document.getElementById('txt-welcome-heading');
+        if (elWelcHead) elWelcHead.textContent = t.welcome_heading;
+
+        const elSoftMode = document.getElementById('txt-soft-mode');
+        if (elSoftMode) elSoftMode.textContent = t.soft_mode;
+
+        const elBtnCont = document.getElementById('btn-continue-welcome');
+        if (elBtnCont) elBtnCont.textContent = t.continue_btn;
+
+        // Textes En-tête & Onglets
+        const elLoggedAs = document.getElementById('txt-logged-as');
+        if (elLoggedAs) elLoggedAs.textContent = t.logged_as;
+
+        const elBtnLogout = document.getElementById('btn-logout');
+        if (elBtnLogout) elBtnLogout.textContent = t.logout_btn;
+
+        const elTabAfaire = document.getElementById('txt-tab-afaire');
+        if (elTabAfaire) elTabAfaire.textContent = t.tab_afaire;
+
+        const elTabFaits = document.getElementById('txt-tab-faits');
+        if (elTabFaits) elTabFaits.textContent = t.tab_faits;
+
+        // Textes Exercice
+        const elBtnSaveQuit = document.getElementById('btn-save-quit');
+        if (elBtnSaveQuit) elBtnSaveQuit.textContent = t.btn_save_quit;
+
+        const elScoreLbl = document.getElementById('txt-score-label');
+        if (elScoreLbl) elScoreLbl.textContent = t.score_label;
+
+        const elErrorsLbl = document.getElementById('txt-errors-label');
+        if (elErrorsLbl) elErrorsLbl.textContent = t.errors_label;
+
+        const elBtnSaveLater = document.getElementById('btn-save-later');
+        if (elBtnSaveLater) elBtnSaveLater.textContent = t.btn_save_later;
+
+        const elBtnSubmit = document.getElementById('btn-submit-final');
+        if (elBtnSubmit) elBtnSubmit.textContent = t.btn_submit;
+
+        const elFinishHead = document.getElementById('txt-finish-heading');
+        if (elFinishHead) elFinishHead.textContent = t.finish_heading;
+
+        const elFinishDesc = document.getElementById('txt-finish-desc');
+        if (elFinishDesc) elFinishDesc.textContent = t.finish_desc;
+
+        const elBtnBackHome = document.getElementById('btn-back-home');
+        if (elBtnBackHome) elBtnBackHome.textContent = t.btn_back_home;
+
+        const elBtnModalClose = document.getElementById('btn-modal-close');
+        if (elBtnModalClose) elBtnModalClose.textContent = t.btn_close;
+    }
+
+    // --- 4. GESTION DE LA SESSION & NAVIGATION ---
+    window.verifierSession = function() {
+        // 0. Si aucune langue sélectionnée -> Écran Langue
+        if (!langueActuelle) {
+            retourChoixLangue();
+            return;
         }
+
+        document.getElementById('ecran-langue').style.display = 'none';
+
+        // 1. Si pas de code élève -> Écran Login
+        if (!codeEleveActuel) {
+            document.getElementById('ecran-login').style.display = 'block';
+            document.getElementById('ecran-bienvenue').style.display = 'none';
+            document.getElementById('header-eleve').style.display = 'none';
+            document.getElementById('ecran-tableau-de-bord').style.display = 'none';
+            document.getElementById('ecran-exercice').style.display = 'none';
+            return;
+        }
+
+        // Si déjà identifié et pas sur exercice : ouvrir le tableau de bord
+        document.getElementById('ecran-login').style.display = 'none';
+        document.getElementById('header-eleve').style.display = 'flex';
+        document.getElementById('affichage-code-eleve').textContent = codeEleveActuel;
+        document.getElementById('ecran-tableau-de-bord').style.display = 'block';
+        document.getElementById('ecran-exercice').style.display = 'none';
+        ecouterDevoirsEnDirect();
     };
 
     window.seConnecter = function() {
         const input = document.getElementById('code-input');
-        const saisie = input ? input.value.trim() : "";
+        const saisie = input ? input.value.trim().toUpperCase() : "";
         if (!saisie) return alert("Veuillez entrer votre code élève.");
 
         codeEleveActuel = saisie;
-        try {
-            localStorage.setItem("codeEleve", codeEleveActuel);
-        } catch(e) {}
-        verifierSession();
+        try { localStorage.setItem("codeEleve", codeEleveActuel); } catch(e) {}
+
+        // Afficher l'écran de bienvenue avec la coche "doux"
+        document.getElementById('ecran-login').style.display = 'none';
+        document.getElementById('bienvenue-nom-user').textContent = codeEleveActuel;
+        
+        const checkSoft = document.getElementById('check-soft-mode');
+        if (checkSoft) checkSoft.checked = modeDouxActif;
+
+        document.getElementById('ecran-bienvenue').style.display = 'block';
+    };
+
+    window.toggleSoftMode = function() {
+        const check = document.getElementById('check-soft-mode');
+        if (check) check.checked = !check.checked;
+    };
+
+    window.validerBienvenue = function() {
+        const check = document.getElementById('check-soft-mode');
+        modeDouxActif = check ? check.checked : false;
+        try { localStorage.setItem("modeDouxEleve", modeDouxActif ? "true" : "false"); } catch(e) {}
+
+        document.getElementById('ecran-bienvenue').style.display = 'none';
+        document.getElementById('header-eleve').style.display = 'flex';
+        document.getElementById('affichage-code-eleve').textContent = codeEleveActuel;
+        document.getElementById('ecran-tableau-de-bord').style.display = 'block';
+        ecouterDevoirsEnDirect();
     };
 
     window.deconnexion = function() {
-        if (confirm("Voulez-vous changer de compte élève ?")) {
-            try {
-                localStorage.removeItem("codeEleve");
-            } catch(e) {}
+        const t = i18n[langueActuelle || 'fr'];
+        if (confirm(t.confirm_redo ? "Changer de compte ?" : "Switch account?")) {
+            try { localStorage.removeItem("codeEleve"); } catch(e) {}
             codeEleveActuel = "";
             verifierSession();
         }
@@ -526,13 +936,11 @@
         }
     };
 
-    // --- 3. CHARGEMENT DYNAMIQUE DES DEVOIRS ---
+    // --- 5. CHARGEMENT DYNAMIQUE DES DEVOIRS ---
     function ecouterDevoirsEnDirect() {
-        if (!db) {
-            const conteneur = document.getElementById('conteneur-afaire');
-            if (conteneur) conteneur.innerHTML = `<p style="color:red; text-align:center;">Connexion à la base de données indisponible.</p>`;
-            return;
-        }
+        if (!db) return;
+
+        const t = i18n[langueActuelle || 'fr'];
 
         db.collection("assignations").onSnapshot(snapshot => {
             const tous = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -557,8 +965,8 @@
                     conteneurAFaire.innerHTML = `
                         <div class="empty-state">
                             <div class="empty-state-icon">🎉</div>
-                            <h3>Tout est à jour !</h3>
-                            <p>Tu n'as aucun devoir en attente pour le moment.</p>
+                            <h3>${t.empty_afaire_title}</h3>
+                            <p>${t.empty_afaire_desc}</p>
                         </div>`;
                 } else {
                     conteneurAFaire.innerHTML = "";
@@ -568,18 +976,19 @@
                         const estEnCours = (d.statut === 'en_cours');
                         const nbTrouvees = d.score || 0;
                         const totalQ = d.totalQuestions || (Array.isArray(d.phrases) ? d.phrases.length : 0);
+                        
                         const badgeHtml = estEnCours 
-                            ? `<span class="badge badge-encours">En cours (${nbTrouvees}/${totalQ} trouvées)</span>` 
-                            : `<span class="badge badge-afaire">Nouveau</span>`;
+                            ? `<span class="badge badge-encours">${t.badge_progress} (${nbTrouvees}/${totalQ} ${t.found_count})</span>` 
+                            : `<span class="badge badge-afaire">${t.badge_new}</span>`;
 
                         card.innerHTML = `
                             <div>
                                 <h3>${d.devoirTitre || "Devoir"}</h3>
-                                <div>${badgeHtml} · <span style="color:#718096; font-size:0.9em;">${totalQ} phrases</span></div>
+                                <div>${badgeHtml} · <span style="color:#718096; font-size:0.9em;">${totalQ} ${t.phrases_count}</span></div>
                             </div>
                             <div>
                                 <button type="button" class="btn ${estEnCours ? 'btn-warning' : ''}" onclick="lancerExerciceParId('${d.id}')">
-                                    ${estEnCours ? 'Reprendre ▶' : 'Commencer ▶'}
+                                    ${estEnCours ? t.btn_resume : t.btn_start}
                                 </button>
                             </div>
                         `;
@@ -595,8 +1004,8 @@
                     conteneurFaits.innerHTML = `
                         <div class="empty-state">
                             <div class="empty-state-icon">📚</div>
-                            <h3>Pas encore de devoirs terminés</h3>
-                            <p>Tes devoirs validés apparaîtront ici avec tes notes.</p>
+                            <h3>${t.empty_faits_title}</h3>
+                            <p>${t.empty_faits_desc}</p>
                         </div>`;
                 } else {
                     conteneurFaits.innerHTML = "";
@@ -610,14 +1019,14 @@
                             <div>
                                 <h3>${d.devoirTitre || "Devoir"}</h3>
                                 <div style="margin-bottom: 6px;">
-                                    <span class="badge badge-termine">Terminé ✓</span>
-                                    <strong style="color:var(--success); margin-left: 8px;">Score : ${d.score || 0} / ${totalQ}</strong>
-                                    <span style="color:var(--danger); font-size:0.9em; margin-left: 8px;">(${d.totalErreurs || 0} faute(s))</span>
+                                    <span class="badge badge-termine">${t.badge_done}</span>
+                                    <strong style="color:var(--success); margin-left: 8px;">${t.score_label} ${d.score || 0} / ${totalQ}</strong>
+                                    <span style="color:var(--danger); font-size:0.9em; margin-left: 8px;">(${d.totalErreurs || 0} ${t.errors_label.toLowerCase()})</span>
                                 </div>
                             </div>
                             <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                                ${aDesFautes ? `<button type="button" class="btn btn-secondary btn-sm" onclick="revoirFautesParId('${d.id}')">🔍 Revoir mes fautes</button>` : ''}
-                                <button type="button" class="btn btn-sm btn-success" onclick="recommencerDevoirParId('${d.id}')">🔄 Refaire</button>
+                                ${aDesFautes ? `<button type="button" class="btn btn-secondary btn-sm" onclick="revoirFautesParId('${d.id}')">${t.btn_review}</button>` : ''}
+                                <button type="button" class="btn btn-sm btn-success" onclick="recommencerDevoirParId('${d.id}')">${t.btn_redo}</button>
                             </div>
                         `;
                         conteneurFaits.appendChild(card);
@@ -625,11 +1034,11 @@
                 }
             }
         }, err => {
-            console.error("Erreur Firestore écoute devoirs :", err);
+            console.error("Erreur Firestore devoirs :", err);
         });
     }
 
-    // --- 4. EXÉCUTION D'UN DEVOIR AVEC REPRISE ---
+    // --- 6. EXÉCUTION DU DEVOIR ---
     window.lancerExerciceParId = function(id) {
         const assignation = devoirsChargesMap[id];
         if (!assignation) return alert("Devoir introuvable.");
@@ -659,10 +1068,7 @@
         conteneur.innerHTML = "";
 
         const phrases = Array.isArray(assignation.phrases) ? assignation.phrases : [];
-        if (phrases.length === 0) {
-            conteneur.innerHTML = `<p style="color:red; text-align:center;">Ce devoir ne contient aucune phrase.</p>`;
-            return;
-        }
+        const t = i18n[langueActuelle || 'fr'];
 
         phrases.forEach((p, idx) => {
             const num = idx + 1;
@@ -703,14 +1109,14 @@
                                class="champ-reponse ${dejaValide ? 'correct-input' : ''}" 
                                id="input-q-${idx}" 
                                value="${repSauvegardee}" 
-                               placeholder="réponse..." 
+                               placeholder="..." 
                                autocomplete="off" 
                                ${dejaValide ? 'disabled' : ''}>
                         <button type="button" class="btn-verifier" 
                                 id="btn-q-${idx}" 
                                 onclick="verifierLigne(${idx})" 
                                 ${dejaValide ? 'disabled' : ''}>
-                            Vérifier
+                            ${t.btn_verify}
                         </button>
                         <span id="fb-q-${idx}">${dejaValide ? '<span class="mark-ok">✓</span>' : ''}</span>
                         ${parts[1] || ""}
@@ -730,7 +1136,8 @@
 
     window.recommencerDevoirParId = async function(id) {
         if (!db) return;
-        if (confirm("Veux-tu réinitialiser ce devoir et le recommencer de zéro ?")) {
+        const t = i18n[langueActuelle || 'fr'];
+        if (confirm(t.confirm_redo)) {
             await db.collection("assignations").doc(id).update({
                 statut: "en_cours",
                 score: 0,
@@ -773,7 +1180,8 @@
             const totalQ = devoirActuel.totalQuestions || devoirActuel.phrases.length;
             if (scoreActuel === totalQ) {
                 setTimeout(() => {
-                    if (confirm("🎉 Bravo ! Tu as réussi toutes les phrases ! Veux-tu finaliser et rendre ce devoir ?")) {
+                    const t = i18n[langueActuelle || 'fr'];
+                    if (confirm("🎉 " + t.confirm_submit)) {
                         terminerEtEnregistrerDevoir();
                     }
                 }, 400);
@@ -805,7 +1213,6 @@
 
     async function synchroniserProgression(forcerTermine) {
         if (!db || !assignationIdActuelle) return;
-
         const statutFinal = forcerTermine ? "termine" : "en_cours";
 
         try {
@@ -827,10 +1234,11 @@
 
         try {
             await synchroniserProgression(false);
-            alert("💾 Progression sauvegardée ! Tu pourras reprendre ce devoir quand tu veux.");
+            const t = i18n[langueActuelle || 'fr'];
+            alert(t.saved_alert);
             retourTableauDeBord();
         } catch(e) {
-            alert("Erreur de sauvegarde : " + e.message);
+            alert("Erreur : " + e.message);
         }
     };
 
@@ -838,7 +1246,9 @@
         if (!assignationIdActuelle) return;
 
         const totalQ = devoirActuel.totalQuestions || (Array.isArray(devoirActuel.phrases) ? devoirActuel.phrases.length : 0);
-        const confirmation = confirm(`Voulez-vous vraiment terminer et envoyer ce devoir ?\n\nPhrases réussies : ${scoreActuel} / ${totalQ}\nFautes commises : ${erreursActuelles}`);
+        const t = i18n[langueActuelle || 'fr'];
+
+        const confirmation = confirm(`${t.confirm_submit}\n\n${t.score_label} ${scoreActuel} / ${totalQ}\n${t.errors_label} ${erreursActuelles}`);
         if (!confirmation) return;
 
         try {
@@ -847,26 +1257,46 @@
             document.getElementById('phrases-conteneur').style.display = 'none';
             document.getElementById('box-actions-fin').style.display = 'none';
 
-            document.getElementById('recap-score-final').textContent = `Score obtenu : ${scoreActuel} / ${totalQ} (Erreurs : ${erreursActuelles})`;
+            document.getElementById('recap-score-final').textContent = `${t.score_label} ${scoreActuel} / ${totalQ} (${t.errors_label} ${erreursActuelles})`;
             document.getElementById('exo-termine-box').style.display = 'block';
             document.getElementById('exo-termine-box').scrollIntoView({ behavior: 'smooth' });
 
         } catch (e) {
-            alert("Erreur lors de l'enregistrement : " + e.message);
+            alert("Erreur : " + e.message);
         }
     };
 
+    // --- 7. DÉCLENCHEMENT DES MESSAGES MOQUEURS OU DOUX ---
     function declencherTaquinerie() {
-        let index = Math.min(erreursActuelles - 1, insultesPaliers.length - 1);
-        if (index < 0) index = 0;
-
-        const d = insultesPaliers[index];
         const overlay = document.getElementById('punition-overlay');
         const text = document.getElementById('punition-text');
         const sub = document.getElementById('punition-sub');
+        const t = i18n[langueActuelle || 'fr'];
 
-        text.textContent = d.kr;
-        sub.textContent = `${d.fr} (Faute n°${erreursActuelles})`;
+        // CAS 1 : MODE DOUX ACTIVÉ ("sois doux avec moi aujourd'hui")
+        if (modeDouxActif) {
+            overlay.classList.add('mode-gentil');
+            text.textContent = t.gentle_wrong;
+            sub.textContent = t.gentle_sub;
+        } 
+        // CAS 2 : ANGLAIS SÉLECTIONNÉ (Moquerie en anglais + traduction française en sous-titre)
+        else if (langueActuelle === 'en') {
+            overlay.classList.remove('mode-gentil');
+            let index = Math.min(erreursActuelles - 1, insultesAnglaises.length - 1);
+            if (index < 0) index = 0;
+            const d = insultesAnglaises[index];
+            text.textContent = d.en;
+            sub.textContent = `${d.fr} (${t.mistake_count_sub}${erreursActuelles})`;
+        } 
+        // CAS 3 : FRANÇAIS OU CORÉEN (Moqueries d'origine coréen/français)
+        else {
+            overlay.classList.remove('mode-gentil');
+            let index = Math.min(erreursActuelles - 1, insultesOriginales.length - 1);
+            if (index < 0) index = 0;
+            const d = insultesOriginales[index];
+            text.textContent = d.kr;
+            sub.textContent = `${d.fr} (${t.mistake_count_sub}${erreursActuelles})`;
+        }
 
         text.style.animation = 'none';
         text.offsetHeight;
@@ -884,16 +1314,17 @@
         const modal = document.getElementById('modal-fautes-eleve');
         const titre = document.getElementById('modal-titre');
         const conteneur = document.getElementById('modal-liste-fautes');
+        const t = i18n[langueActuelle || 'fr'];
 
-        titre.textContent = `Tes erreurs sur "${devoir.devoirTitre || 'Devoir'}"`;
+        titre.textContent = `${t.recap_mistakes_title} "${devoir.devoirTitre || 'Devoir'}"`;
 
         const fautes = Array.isArray(devoir.fautesDetails) ? devoir.fautesDetails : [];
         let html = `<table>
             <thead>
                 <tr>
-                    <th>Phrase</th>
-                    <th>Ta réponse</th>
-                    <th>Bonne réponse</th>
+                    <th>${t.th_sentence}</th>
+                    <th>${t.th_your_answer}</th>
+                    <th>${t.th_correct_answer}</th>
                 </tr>
             </thead>
             <tbody>`;
@@ -922,7 +1353,8 @@
         document.getElementById('ecran-tableau-de-bord').style.display = 'block';
     };
 
-    // Lancement garanti
+    // Démarrage
+    if (langueActuelle) appliquerLangue();
     verifierSession();
 </script>
 </body>
