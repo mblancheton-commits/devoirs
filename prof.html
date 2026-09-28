@@ -134,7 +134,7 @@
 <div class="container">
     <header>
         <h1>🎓 Tableau de bord Enseignant</h1>
-        <div><span style="color:var(--success); font-weight:bold;">● Connecté à Firebase</span></div>
+        <div><span id="db-status" style="color:var(--success); font-weight:bold;">● Connecté à Firebase</span></div>
     </header>
 
     <div class="tabs">
@@ -258,7 +258,7 @@ He is waiting ____ the bus stop.;at</div>
     </div>
 </div>
 
-<!-- MODAL GÉNÉRAL (FAUTES OU CONSULTATION DE DEVOIR) -->
+<!-- MODAL GÉNÉRAL -->
 <div class="modal" id="modal-fautes">
     <div class="modal-content">
         <h2 id="modal-titre" style="margin-top:0; color:var(--primary);">-</h2>
@@ -270,40 +270,61 @@ He is waiting ____ the bus stop.;at</div>
 </div>
 
 <script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyBF72uEilOlNUnRB4_BqREpXCj6NvF4Mac",
-        authDomain: "exoanglais-6dd43.firebaseapp.com",
-        projectId: "exoanglais-6dd43",
-        storageBucket: "exoanglais-6dd43.firebasestorage.app",
-        messagingSenderId: "656075154329",
-        appId: "1:656075154329:web:cfe7ccb130ae55da02a908",
-        measurementId: "G-BWY78NT061"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+    // --- 1. INITIALISATION FIREBASE BLINDÉE ---
+    let db = null;
+    try {
+        const firebaseConfig = {
+            apiKey: "AIzaSyBF72uEilOlNUnRB4_BqREpXCj6NvF4Mac",
+            authDomain: "exoanglais-6dd43.firebaseapp.com",
+            projectId: "exoanglais-6dd43",
+            storageBucket: "exoanglais-6dd43.firebasestorage.app",
+            messagingSenderId: "656075154329",
+            appId: "1:656075154329:web:cfe7ccb130ae55da02a908",
+            measurementId: "G-BWY78NT061"
+        };
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        db = firebase.firestore();
+    } catch(e) {
+        console.error("Erreur init Firebase :", e);
+        const statusEl = document.getElementById('db-status');
+        if (statusEl) {
+            statusEl.textContent = "Erreur de connexion Firebase";
+            statusEl.style.color = "red";
+        }
+    }
 
     let listeEleves = [];
     let listeDevoirs = [];
-    let assignationsMap = {}; // Mémoire pour éviter le bug d'apostrophe
+    let assignationsMap = {};
     let devoirsMap = {};
+    let elevesMap = {};
 
+    // --- 2. GESTION DES ONGLETS FAIL-SAFE ---
     function basculerOnglet(tabId, btnElement) {
-        document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
-        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-        
-        const cible = document.getElementById(tabId);
-        if (cible) cible.style.display = 'block';
+        try {
+            document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            
+            const cible = document.getElementById(tabId);
+            if (cible) cible.style.display = 'block';
 
-        if (btnElement) {
-            btnElement.classList.add('active');
-        } else {
-            const boutonAuto = document.getElementById('btn-' + tabId);
-            if (boutonAuto) boutonAuto.classList.add('active');
+            if (btnElement) {
+                btnElement.classList.add('active');
+            } else {
+                const boutonAuto = document.getElementById('btn-' + tabId);
+                if (boutonAuto) boutonAuto.classList.add('active');
+            }
+        } catch(err) {
+            console.error("Erreur basculerOnglet :", err);
         }
     }
 
     function ajusterFormulaireCreation() {
-        const type = document.querySelector('input[name="type-exo"]:checked').value;
+        const typeEl = document.querySelector('input[name="type-exo"]:checked');
+        if (!typeEl) return;
+        const type = typeEl.value;
         const boxIdentiques = document.getElementById('box-options-identiques');
         const aide = document.getElementById('aide-format');
 
@@ -320,7 +341,8 @@ He is waiting ____ the bus stop.;at</div>
     }
 
     function parserTexteEnPhrases() {
-        const type = document.querySelector('input[name="type-exo"]:checked').value;
+        const typeEl = document.querySelector('input[name="type-exo"]:checked');
+        const type = typeEl ? typeEl.value : 'select-identique';
         const texte = document.getElementById('texte-brut-devoir').value.trim();
         const lignes = texte.split('\n').map(l => l.trim()).filter(l => l.length > 0);
         const phrases = [];
@@ -362,7 +384,7 @@ He is waiting ____ the bus stop.;at</div>
         phrases.forEach((p, idx) => {
             const div = document.createElement('div');
             div.style.marginBottom = "10px";
-            const parts = p.q.split('____');
+            const parts = p.q.includes('____') ? p.q.split('____') : p.q.split('___');
 
             if (p.type === 'select') {
                 let optionsHtml = `<option value="">---</option>` + p.options.map(o => `<option>${o}</option>`).join('');
@@ -378,6 +400,7 @@ He is waiting ____ the bus stop.;at</div>
     }
 
     async function enregistrerDevoir() {
+        if (!db) return alert("Firebase n'est pas connecté.");
         const titre = document.getElementById('titre-devoir').value.trim();
         const phrases = parserTexteEnPhrases();
 
@@ -397,11 +420,12 @@ He is waiting ____ the bus stop.;at</div>
             document.getElementById('card-previsualisation').style.display = "none";
             basculerOnglet('tab-devoirs');
         } catch(e) {
-            alert("Erreur : " + e.message);
+            alert("Erreur lors de l'enregistrement : " + e.message);
         }
     }
 
     async function creerEleve() {
+        if (!db) return alert("Firebase n'est pas connecté.");
         const code = document.getElementById('nouvel-eleve-nom').value.trim();
         if (!code) return alert("Indiquez le code élève (ex: Lucas01).");
 
@@ -414,24 +438,32 @@ He is waiting ____ the bus stop.;at</div>
             document.getElementById('nouvel-eleve-nom').value = "";
             alert(`✅ Profil ${code} enregistré !`);
         } catch(e) {
-            alert("Erreur : " + e.message);
+            alert("Erreur création élève : " + e.message);
         }
     }
 
-    async function supprimerEleve(id, code) {
-        if (confirm(`Supprimer l'élève ${code} ?`)) {
+    async function supprimerEleveParId(id) {
+        if (!db) return;
+        const e = elevesMap[id];
+        const nom = e ? e.code : "cet élève";
+        if (confirm(`Supprimer l'élève ${nom} ?`)) {
             await db.collection("eleves").doc(id).delete();
         }
     }
 
-    async function supprimerDevoir(id, titre) {
-        if (confirm(`Supprimer définitivement le devoir "${titre}" de la banque ?`)) {
+    async function supprimerDevoirParId(id) {
+        if (!db) return;
+        const d = devoirsMap[id];
+        const nom = d ? d.titre : "ce devoir";
+        if (confirm(`Supprimer définitivement "${nom}" de la banque ?`)) {
             await db.collection("devoirs").doc(id).delete();
         }
     }
 
-    async function assignerDevoir(devoirId) {
-        const devoir = listeDevoirs.find(d => d.id === devoirId);
+    async function assignerDevoirParId(devoirId) {
+        if (!db) return;
+        const devoir = devoirsMap[devoirId];
+        if (!devoir) return alert("Devoir introuvable.");
         if (listeEleves.length === 0) return alert("Créez d'abord au moins un élève.");
 
         const optionsTexte = listeEleves.map((e, idx) => `${idx + 1}. ${e.code}`).join('\n');
@@ -441,7 +473,224 @@ He is waiting ____ the bus stop.;at</div>
         if (num >= 1 && num <= listeEleves.length) {
             const eleveChoisi = listeEleves[num - 1];
 
-            await db.collection("assignations").add({
-                eleveId: eleveChoisi.id,
-                eleveCode: eleveChoisi.code,
-                devoirId: devoir.
+            try {
+                await db.collection("assignations").add({
+                    eleveId: eleveChoisi.id,
+                    eleveCode: eleveChoisi.code,
+                    devoirId: devoir.id,
+                    devoirTitre: devoir.titre,
+                    phrases: devoir.phrases || [],
+                    statut: "non_commence",
+                    score: 0,
+                    totalQuestions: devoir.phrases ? devoir.phrases.length : 0,
+                    totalErreurs: 0,
+                    fautesDetails: [],
+                    dateAssignation: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                alert(`✅ Devoir assigné à ${eleveChoisi.code} !`);
+                basculerOnglet('tab-eleves');
+            } catch(err) {
+                alert("Erreur lors de l'assignation : " + err.message);
+            }
+        }
+    }
+
+    // --- 3. ÉCOUTE TEMPS RÉEL SÉCURISÉE ---
+    function ecouterDonnees() {
+        if (!db) return;
+
+        // 1. Liste des élèves
+        db.collection("eleves").onSnapshot(snapshot => {
+            listeEleves = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            listeEleves.sort((a, b) => (b.dateCreation?.seconds || 0) - (a.dateCreation?.seconds || 0));
+
+            elevesMap = {};
+            listeEleves.forEach(e => { elevesMap[e.id] = e; });
+
+            const tbody = document.getElementById('table-eleves-corps');
+            tbody.innerHTML = "";
+
+            if (listeEleves.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#888;">Aucun élève enregistré.</td></tr>`;
+                return;
+            }
+
+            listeEleves.forEach(e => {
+                const tr = document.createElement('tr');
+                const dateStr = e.dateCreation ? e.dateCreation.toDate().toLocaleDateString('fr-FR') : 'Aujourd\'hui';
+                tr.innerHTML = `
+                    <td><strong style="color:#2b6cb0; font-size:1.1em;">${e.code || "Sans nom"}</strong></td>
+                    <td>${dateStr}</td>
+                    <td>
+                        <button class="btn btn-danger btn-sm" onclick="supprimerEleveParId('${e.id}')">🗑️ Supprimer</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }, err => {
+            console.error("Erreur Firestore élèves :", err);
+            document.getElementById('table-eleves-corps').innerHTML = `<tr><td colspan="3" style="color:red; text-align:center;">Erreur : ${err.message}</td></tr>`;
+        });
+
+        // 2. Liste des devoirs (BLINDÉE CONTRE LES DONNÉES INCOMPLÈTES)
+        db.collection("devoirs").onSnapshot(snapshot => {
+            listeDevoirs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            listeDevoirs.sort((a, b) => (b.dateCreation?.seconds || 0) - (a.dateCreation?.seconds || 0));
+
+            devoirsMap = {};
+            listeDevoirs.forEach(d => { devoirsMap[d.id] = d; });
+
+            const tbody = document.getElementById('table-devoirs-corps');
+            tbody.innerHTML = "";
+
+            if (listeDevoirs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#888;">Aucun devoir créé pour le moment.</td></tr>`;
+                return;
+            }
+
+            listeDevoirs.forEach(d => {
+                const tr = document.createElement('tr');
+                const tabPhrases = Array.isArray(d.phrases) ? d.phrases : [];
+                const nbPhrases = tabPhrases.length;
+                const typeTexte = (nbPhrases > 0 && tabPhrases[0].type === 'select') ? 'Menu déroulant' : 'Saisie texte';
+
+                tr.innerHTML = `
+                    <td><strong>${d.titre || "Sans titre"}</strong></td>
+                    <td>${typeTexte}</td>
+                    <td>${nbPhrases} phrases</td>
+                    <td style="display:flex; gap:6px; flex-wrap:wrap;">
+                        <button class="btn btn-sm" onclick="consulterDevoirParId('${d.id}')">👁️ Voir les phrases</button>
+                        <button class="btn btn-sm btn-success" onclick="assignerDevoirParId('${d.id}')">➕ Assigner</button>
+                        <button class="btn btn-sm btn-danger" onclick="supprimerDevoirParId('${d.id}')">🗑️</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }, err => {
+            console.error("Erreur Firestore devoirs :", err);
+            document.getElementById('table-devoirs-corps').innerHTML = `<tr><td colspan="4" style="color:red; text-align:center;">Erreur : ${err.message}</td></tr>`;
+        });
+
+        // 3. Suivi des résultats
+        db.collection("assignations").onSnapshot(snapshot => {
+            const assignations = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            assignations.sort((a, b) => (b.dateAssignation?.seconds || 0) - (a.dateAssignation?.seconds || 0));
+
+            assignationsMap = {};
+            assignations.forEach(a => { assignationsMap[a.id] = a; });
+
+            const tbody = document.getElementById('table-assignations-corps');
+            tbody.innerHTML = "";
+
+            if (assignations.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#888;">Aucun devoir assigné.</td></tr>`;
+                return;
+            }
+
+            assignations.forEach(a => {
+                const tr = document.createElement('tr');
+
+                let badgeStatut = `<span class="badge badge-nonfait">Non commencé</span>`;
+                if (a.statut === 'en_cours') badgeStatut = `<span class="badge badge-cours">En cours</span>`;
+                if (a.statut === 'termine') badgeStatut = `<span class="badge badge-termine">Terminé</span>`;
+
+                const totalQ = a.totalQuestions || (Array.isArray(a.phrases) ? a.phrases.length : 0);
+
+                tr.innerHTML = `
+                    <td><strong>${a.eleveCode || "Inconnu"}</strong></td>
+                    <td>${a.devoirTitre || "Sans titre"}</td>
+                    <td>${badgeStatut}</td>
+                    <td><strong>${a.score || 0} / ${totalQ}</strong></td>
+                    <td><strong style="color:var(--danger);">${a.totalErreurs || 0} faute(s)</strong></td>
+                    <td>
+                        <button class="btn btn-sm" onclick="voirFautesParId('${a.id}')">🔍 Voir les erreurs</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }, err => {
+            console.error("Erreur Firestore assignations :", err);
+            document.getElementById('table-assignations-corps').innerHTML = `<tr><td colspan="6" style="color:red; text-align:center;">Erreur : ${err.message}</td></tr>`;
+        });
+    }
+
+    // MODAL : VOIR LES FAUTES
+    function voirFautesParId(id) {
+        const assignation = assignationsMap[id];
+        if (!assignation) return alert("Données introuvables.");
+
+        const modal = document.getElementById('modal-fautes');
+        const titre = document.getElementById('modal-titre');
+        const contenu = document.getElementById('modal-contenu');
+
+        titre.textContent = `Erreurs de ${assignation.eleveCode} sur "${assignation.devoirTitre}"`;
+
+        const fautes = Array.isArray(assignation.fautesDetails) ? assignation.fautesDetails : [];
+
+        if (fautes.length === 0) {
+            contenu.innerHTML = `<p style="color:var(--success); font-weight:bold; padding:15px; text-align:center;">🎉 Aucune faute enregistrée pour l'instant !</p>`;
+        } else {
+            let html = `<table>
+                <thead>
+                    <tr>
+                        <th>Phrase</th>
+                        <th>Réponse de l'élève</th>
+                        <th>Bonne réponse</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+
+            fautes.forEach(f => {
+                html += `
+                    <tr>
+                        <td>${f.phrase || "-"}</td>
+                        <td style="color:var(--danger); font-weight:bold; text-decoration:line-through;">${f.reponseEleve || "(vide)"}</td>
+                        <td style="color:var(--success); font-weight:bold;">${f.attendu || "-"}</td>
+                    </tr>
+                `;
+            });
+
+            html += `</tbody></table>`;
+            contenu.innerHTML = html;
+        }
+
+        modal.style.display = "flex";
+    }
+
+    // MODAL : VOIR LES QUESTIONS D'UN DEVOIR
+    function consulterDevoirParId(id) {
+        const devoir = devoirsMap[id];
+        if (!devoir) return alert("Devoir introuvable.");
+
+        const modal = document.getElementById('modal-fautes');
+        const titre = document.getElementById('modal-titre');
+        const contenu = document.getElementById('modal-contenu');
+
+        titre.textContent = `Contenu du devoir : "${devoir.titre}"`;
+
+        const phrases = Array.isArray(devoir.phrases) ? devoir.phrases : [];
+        if (phrases.length === 0) {
+            contenu.innerHTML = `<p style="color:#888;">Ce devoir ne contient aucune phrase.</p>`;
+        } else {
+            let html = `<ol style="padding-left:20px; line-height:1.8;">`;
+            phrases.forEach(p => {
+                const rep = Array.isArray(p.a) ? p.a.join(' / ') : (p.a || "");
+                html += `<li>${p.q} <strong style="color:var(--success); margin-left:8px;">[Réponse : ${rep}]</strong></li>`;
+            });
+            html += `</ol>`;
+            contenu.innerHTML = html;
+        }
+
+        modal.style.display = "flex";
+    }
+
+    function fermerModal() {
+        document.getElementById('modal-fautes').style.display = "none";
+    }
+
+    // Lancement de l'écoute des données
+    ecouterDonnees();
+</script>
+</body>
+</html>
