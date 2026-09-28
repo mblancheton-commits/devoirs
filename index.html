@@ -316,22 +316,22 @@
         <h1>👋 Espace Devoirs</h1>
         <p>Entrez votre code élève pour accéder à vos exercices :</p>
         <input type="text" id="code-input" placeholder="EX: LUCAS01" autocomplete="off">
-        <button class="btn btn-full" onclick="seConnecter()">Voir mes devoirs</button>
+        <button type="button" class="btn btn-full" onclick="seConnecter()">Voir mes devoirs</button>
     </div>
 
     <!-- EN-TÊTE ÉLÈVE CONNECTÉ -->
     <div id="header-eleve">
         <div class="info-profil">Élève : <strong id="affichage-code-eleve" style="color:var(--accent);">-</strong></div>
-        <button class="btn btn-secondary" onclick="deconnexion()">Changer de compte</button>
+        <button type="button" class="btn btn-secondary" onclick="deconnexion()">Changer de compte</button>
     </div>
 
     <!-- 2. TABLEAU DE BORD DYNAMIQUE -->
     <div id="ecran-tableau-de-bord">
         <div class="tabs-nav">
-            <button class="tab-btn active" id="btn-tab-afaire" onclick="changerOngletDevoirs('afaire')">
+            <button type="button" class="tab-btn active" id="btn-tab-afaire" onclick="changerOngletDevoirs('afaire')">
                 ⏳ À faire <span class="tab-badge" id="badge-nb-afaire">0</span>
             </button>
-            <button class="tab-btn" id="btn-tab-faits" onclick="changerOngletDevoirs('faits')">
+            <button type="button" class="tab-btn" id="btn-tab-faits" onclick="changerOngletDevoirs('faits')">
                 🏆 Faits / Terminés <span class="tab-badge" id="badge-nb-faits">0</span>
             </button>
         </div>
@@ -355,7 +355,7 @@
     <div id="ecran-exercice">
         <div class="exo-header">
             <div>
-                <button class="btn btn-secondary" onclick="sauvegarderEtQuitter()">← Sauvegarder et quitter</button>
+                <button type="button" class="btn btn-secondary" onclick="sauvegarderEtQuitter()">← Sauvegarder et quitter</button>
                 <h2 id="exo-titre" style="margin: 8px 0 0 0; color:var(--primary); font-size: 1.25em;">-</h2>
             </div>
             <div style="text-align:right;">
@@ -369,23 +369,23 @@
         <!-- DEUX BOUTONS DE SAUVEGARDE EN BAS -->
         <div class="actions-fin-box" id="box-actions-fin">
             <div>
-                <button class="btn btn-warning" onclick="sauvegarderEtQuitter()">
+                <button type="button" class="btn btn-warning" onclick="sauvegarderEtQuitter()">
                     💾 Sauvegarder et reprendre plus tard
                 </button>
             </div>
             <div>
-                <button class="btn btn-success" onclick="terminerEtEnregistrerDevoir()">
+                <button type="button" class="btn btn-success" onclick="terminerEtEnregistrerDevoir()">
                     ✅ Terminer et rendre mon devoir
                 </button>
             </div>
         </div>
 
-        <!-- BOÎTE DE FIN (QUAND LE DEVOIR EST TERMINÉ) -->
+        <!-- BOÎTE DE FIN -->
         <div id="exo-termine-box" style="display:none; background:white; padding:30px; border-radius:10px; text-align:center; margin-top:20px; box-shadow:0 4px 10px rgba(0,0,0,0.06);">
             <h2 style="color:var(--success); margin-top:0;">🎉 Devoir terminé et enregistré !</h2>
             <p id="recap-score-final" style="font-size: 1.15em; font-weight: bold; color: var(--primary);"></p>
             <p style="color:#666;">Vos résultats et vos erreurs ont bien été transmis à votre professeur.</p>
-            <button class="btn btn-success" onclick="retourTableauDeBord()">Retourner à la liste de mes devoirs</button>
+            <button type="button" class="btn btn-success" onclick="retourTableauDeBord()">Retourner à la liste de mes devoirs</button>
         </div>
     </div>
 
@@ -397,7 +397,7 @@
         <h2 id="modal-titre" style="margin-top:0; color:var(--primary);">Récapitulatif des erreurs</h2>
         <div id="modal-liste-fautes"></div>
         <div style="text-align:right; margin-top:20px;">
-            <button class="btn btn-secondary" onclick="fermerModalFautes()">Fermer</button>
+            <button type="button" class="btn btn-secondary" onclick="fermerModalFautes()">Fermer</button>
         </div>
     </div>
 </div>
@@ -409,18 +409,25 @@
 </div>
 
 <script>
-    // --- 1. INITIALISATION FIREBASE ---
-    const firebaseConfig = {
-        apiKey: "AIzaSyBF72uEilOlNUnRB4_BqREpXCj6NvF4Mac",
-        authDomain: "exoanglais-6dd43.firebaseapp.com",
-        projectId: "exoanglais-6dd43",
-        storageBucket: "exoanglais-6dd43.firebasestorage.app",
-        messagingSenderId: "656075154329",
-        appId: "1:656075154329:web:cfe7ccb130ae55da02a908",
-        measurementId: "G-BWY78NT061"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+    // --- 1. INITIALISATION FIREBASE BLINDÉE ---
+    let db = null;
+    try {
+        const firebaseConfig = {
+            apiKey: "AIzaSyBF72uEilOlNUnRB4_BqREpXCj6NvF4Mac",
+            authDomain: "exoanglais-6dd43.firebaseapp.com",
+            projectId: "exoanglais-6dd43",
+            storageBucket: "exoanglais-6dd43.firebasestorage.app",
+            messagingSenderId: "656075154329",
+            appId: "1:656075154329:web:cfe7ccb130ae55da02a908",
+            measurementId: "G-BWY78NT061"
+        };
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        db = firebase.firestore();
+    } catch(e) {
+        console.error("Erreur init Firebase élève :", e);
+    }
 
     const insultesPaliers = [
         { kr: "메롱~ 😜", fr: "Nananère ! Raté !" },
@@ -440,55 +447,73 @@
         { kr: "슈퍼 바보! 🦸‍♂️💥", fr: "Niveau Ultime : Super Babo !" }
     ];
 
-    let codeEleveActuel = localStorage.getItem("codeEleve") || "";
+    let codeEleveActuel = "";
+    try {
+        codeEleveActuel = localStorage.getItem("codeEleve") || "";
+    } catch(e) {}
+
     let devoirsChargesMap = {};
     let devoirActuel = null;
     let assignationIdActuelle = null;
     let scoreActuel = 0;
     let erreursActuelles = 0;
     let fautesEnregistrees = [];
-    let reponsesValidees = {}; // Stocke les réponses déjà réussies { "0": "work", "1": "is crying" }
+    let reponsesValidees = {};
     let timerOverlay = null;
 
     // --- 2. GESTION DE LA SESSION ---
-    function verifierSession() {
+    window.verifierSession = function() {
+        const ecranLogin = document.getElementById('ecran-login');
+        const headerEleve = document.getElementById('header-eleve');
+        const affichageCode = document.getElementById('affichage-code-eleve');
+        const ecranTableau = document.getElementById('ecran-tableau-de-bord');
+        const ecranExercice = document.getElementById('ecran-exercice');
+
         if (codeEleveActuel) {
-            document.getElementById('ecran-login').style.display = 'none';
-            document.getElementById('header-eleve').style.display = 'flex';
-            document.getElementById('affichage-code-eleve').textContent = codeEleveActuel;
-            document.getElementById('ecran-tableau-de-bord').style.display = 'block';
-            document.getElementById('ecran-exercice').style.display = 'none';
+            if (ecranLogin) ecranLogin.style.display = 'none';
+            if (headerEleve) headerEleve.style.display = 'flex';
+            if (affichageCode) affichageCode.textContent = codeEleveActuel;
+            if (ecranTableau) ecranTableau.style.display = 'block';
+            if (ecranExercice) ecranExercice.style.display = 'none';
             ecouterDevoirsEnDirect();
         } else {
-            document.getElementById('ecran-login').style.display = 'block';
-            document.getElementById('header-eleve').style.display = 'none';
-            document.getElementById('ecran-tableau-de-bord').style.display = 'none';
-            document.getElementById('ecran-exercice').style.display = 'none';
+            if (ecranLogin) ecranLogin.style.display = 'block';
+            if (headerEleve) headerEleve.style.display = 'none';
+            if (ecranTableau) ecranTableau.style.display = 'none';
+            if (ecranExercice) ecranExercice.style.display = 'none';
         }
-    }
+    };
 
-    function seConnecter() {
-        const saisie = document.getElementById('code-input').value.trim();
+    window.seConnecter = function() {
+        const input = document.getElementById('code-input');
+        const saisie = input ? input.value.trim() : "";
         if (!saisie) return alert("Veuillez entrer votre code élève.");
 
         codeEleveActuel = saisie;
-        localStorage.setItem("codeEleve", codeEleveActuel);
+        try {
+            localStorage.setItem("codeEleve", codeEleveActuel);
+        } catch(e) {}
         verifierSession();
-    }
+    };
 
-    function deconnexion() {
+    window.deconnexion = function() {
         if (confirm("Voulez-vous changer de compte élève ?")) {
-            localStorage.removeItem("codeEleve");
+            try {
+                localStorage.removeItem("codeEleve");
+            } catch(e) {}
             codeEleveActuel = "";
             verifierSession();
         }
+    };
+
+    const inputCodeEl = document.getElementById('code-input');
+    if (inputCodeEl) {
+        inputCodeEl.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') seConnecter();
+        });
     }
 
-    document.getElementById('code-input').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') seConnecter();
-    });
-
-    function changerOngletDevoirs(onglet) {
+    window.changerOngletDevoirs = function(onglet) {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
 
@@ -499,10 +524,16 @@
             document.getElementById('btn-tab-faits').classList.add('active');
             document.getElementById('panel-faits').classList.add('active');
         }
-    }
+    };
 
     // --- 3. CHARGEMENT DYNAMIQUE DES DEVOIRS ---
     function ecouterDevoirsEnDirect() {
+        if (!db) {
+            const conteneur = document.getElementById('conteneur-afaire');
+            if (conteneur) conteneur.innerHTML = `<p style="color:red; text-align:center;">Connexion à la base de données indisponible.</p>`;
+            return;
+        }
+
         db.collection("assignations").onSnapshot(snapshot => {
             const tous = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             
@@ -514,100 +545,110 @@
             const devoirsAFaire = mesDevoirs.filter(d => d.statut !== 'termine');
             const devoirsFaits = mesDevoirs.filter(d => d.statut === 'termine');
 
-            document.getElementById('badge-nb-afaire').textContent = devoirsAFaire.length;
-            document.getElementById('badge-nb-faits').textContent = devoirsFaits.length;
+            const badgeAFaire = document.getElementById('badge-nb-afaire');
+            const badgeFaits = document.getElementById('badge-nb-faits');
+            if (badgeAFaire) badgeAFaire.textContent = devoirsAFaire.length;
+            if (badgeFaits) badgeFaits.textContent = devoirsFaits.length;
 
             // Rendu section "À FAIRE"
             const conteneurAFaire = document.getElementById('conteneur-afaire');
-            if (devoirsAFaire.length === 0) {
-                conteneurAFaire.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">🎉</div>
-                        <h3>Tout est à jour !</h3>
-                        <p>Tu n'as aucun devoir en attente pour le moment.</p>
-                    </div>`;
-            } else {
-                conteneurAFaire.innerHTML = "";
-                devoirsAFaire.forEach(d => {
-                    const card = document.createElement('div');
-                    card.className = "devoir-card";
-                    const estEnCours = (d.statut === 'en_cours');
-                    const nbTrouvees = d.score || 0;
-                    const badgeHtml = estEnCours 
-                        ? `<span class="badge badge-encours">En cours (${nbTrouvees}/${d.totalQuestions} trouvées)</span>` 
-                        : `<span class="badge badge-afaire">Nouveau</span>`;
+            if (conteneurAFaire) {
+                if (devoirsAFaire.length === 0) {
+                    conteneurAFaire.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">🎉</div>
+                            <h3>Tout est à jour !</h3>
+                            <p>Tu n'as aucun devoir en attente pour le moment.</p>
+                        </div>`;
+                } else {
+                    conteneurAFaire.innerHTML = "";
+                    devoirsAFaire.forEach(d => {
+                        const card = document.createElement('div');
+                        card.className = "devoir-card";
+                        const estEnCours = (d.statut === 'en_cours');
+                        const nbTrouvees = d.score || 0;
+                        const totalQ = d.totalQuestions || (Array.isArray(d.phrases) ? d.phrases.length : 0);
+                        const badgeHtml = estEnCours 
+                            ? `<span class="badge badge-encours">En cours (${nbTrouvees}/${totalQ} trouvées)</span>` 
+                            : `<span class="badge badge-afaire">Nouveau</span>`;
 
-                    card.innerHTML = `
-                        <div>
-                            <h3>${d.devoirTitre}</h3>
-                            <div>${badgeHtml} · <span style="color:#718096; font-size:0.9em;">${d.totalQuestions} phrases</span></div>
-                        </div>
-                        <div>
-                            <button class="btn ${estEnCours ? 'btn-warning' : ''}" onclick="lancerExerciceParId('${d.id}')">
-                                ${estEnCours ? 'Reprendre ▶' : 'Commencer ▶'}
-                            </button>
-                        </div>
-                    `;
-                    conteneurAFaire.appendChild(card);
-                });
+                        card.innerHTML = `
+                            <div>
+                                <h3>${d.devoirTitre || "Devoir"}</h3>
+                                <div>${badgeHtml} · <span style="color:#718096; font-size:0.9em;">${totalQ} phrases</span></div>
+                            </div>
+                            <div>
+                                <button type="button" class="btn ${estEnCours ? 'btn-warning' : ''}" onclick="lancerExerciceParId('${d.id}')">
+                                    ${estEnCours ? 'Reprendre ▶' : 'Commencer ▶'}
+                                </button>
+                            </div>
+                        `;
+                        conteneurAFaire.appendChild(card);
+                    });
+                }
             }
 
             // Rendu section "FAITS"
             const conteneurFaits = document.getElementById('conteneur-faits');
-            if (devoirsFaits.length === 0) {
-                conteneurFaits.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">📚</div>
-                        <h3>Pas encore de devoirs terminés</h3>
-                        <p>Tes devoirs validés apparaîtront ici avec tes notes.</p>
-                    </div>`;
-            } else {
-                conteneurFaits.innerHTML = "";
-                devoirsFaits.forEach(d => {
-                    const card = document.createElement('div');
-                    card.className = "devoir-card fait";
-                    const aDesFautes = d.fautesDetails && d.fautesDetails.length > 0;
+            if (conteneurFaits) {
+                if (devoirsFaits.length === 0) {
+                    conteneurFaits.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📚</div>
+                            <h3>Pas encore de devoirs terminés</h3>
+                            <p>Tes devoirs validés apparaîtront ici avec tes notes.</p>
+                        </div>`;
+                } else {
+                    conteneurFaits.innerHTML = "";
+                    devoirsFaits.forEach(d => {
+                        const card = document.createElement('div');
+                        card.className = "devoir-card fait";
+                        const aDesFautes = Array.isArray(d.fautesDetails) && d.fautesDetails.length > 0;
+                        const totalQ = d.totalQuestions || (Array.isArray(d.phrases) ? d.phrases.length : 0);
 
-                    card.innerHTML = `
-                        <div>
-                            <h3>${d.devoirTitre}</h3>
-                            <div style="margin-bottom: 6px;">
-                                <span class="badge badge-termine">Terminé ✓</span>
-                                <strong style="color:var(--success); margin-left: 8px;">Score : ${d.score} / ${d.totalQuestions}</strong>
-                                <span style="color:var(--danger); font-size:0.9em; margin-left: 8px;">(${d.totalErreurs || 0} faute(s))</span>
+                        card.innerHTML = `
+                            <div>
+                                <h3>${d.devoirTitre || "Devoir"}</h3>
+                                <div style="margin-bottom: 6px;">
+                                    <span class="badge badge-termine">Terminé ✓</span>
+                                    <strong style="color:var(--success); margin-left: 8px;">Score : ${d.score || 0} / ${totalQ}</strong>
+                                    <span style="color:var(--danger); font-size:0.9em; margin-left: 8px;">(${d.totalErreurs || 0} faute(s))</span>
+                                </div>
                             </div>
-                        </div>
-                        <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                            ${aDesFautes ? `<button class="btn btn-secondary btn-sm" onclick="revoirFautesParId('${d.id}')">🔍 Revoir mes fautes</button>` : ''}
-                            <button class="btn btn-sm btn-success" onclick="recommencerDevoirParId('${d.id}')">🔄 Refaire</button>
-                        </div>
-                    `;
-                    conteneurFaits.appendChild(card);
-                });
+                            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                                ${aDesFautes ? `<button type="button" class="btn btn-secondary btn-sm" onclick="revoirFautesParId('${d.id}')">🔍 Revoir mes fautes</button>` : ''}
+                                <button type="button" class="btn btn-sm btn-success" onclick="recommencerDevoirParId('${d.id}')">🔄 Refaire</button>
+                            </div>
+                        `;
+                        conteneurFaits.appendChild(card);
+                    });
+                }
             }
+        }, err => {
+            console.error("Erreur Firestore écoute devoirs :", err);
         });
     }
 
-    // --- 4. EXÉCUTION D'UN DEVOIR AVEC REPRISE DE PROGRESSION ---
-    function lancerExerciceParId(id) {
+    // --- 4. EXÉCUTION D'UN DEVOIR AVEC REPRISE ---
+    window.lancerExerciceParId = function(id) {
         const assignation = devoirsChargesMap[id];
         if (!assignation) return alert("Devoir introuvable.");
 
         devoirActuel = assignation;
         assignationIdActuelle = assignation.id;
         
-        // Récupérer les réponses déjà enregistrées
         reponsesValidees = assignation.reponsesValidees || {};
         scoreActuel = assignation.score || Object.keys(reponsesValidees).length;
         erreursActuelles = assignation.totalErreurs || 0;
-        fautesEnregistrees = assignation.fautesDetails || [];
+        fautesEnregistrees = Array.isArray(assignation.fautesDetails) ? assignation.fautesDetails : [];
 
         document.getElementById('ecran-tableau-de-bord').style.display = 'none';
         document.getElementById('ecran-exercice').style.display = 'block';
 
-        document.getElementById('exo-titre').textContent = assignation.devoirTitre;
+        const totalQ = assignation.totalQuestions || (Array.isArray(assignation.phrases) ? assignation.phrases.length : 0);
+        document.getElementById('exo-titre').textContent = assignation.devoirTitre || "Exercice";
         document.getElementById('exo-score').textContent = scoreActuel;
-        document.getElementById('exo-total').textContent = assignation.totalQuestions;
+        document.getElementById('exo-total').textContent = totalQ;
         document.getElementById('exo-erreurs').textContent = erreursActuelles;
         
         document.getElementById('phrases-conteneur').style.display = 'block';
@@ -617,9 +658,272 @@
         const conteneur = document.getElementById('phrases-conteneur');
         conteneur.innerHTML = "";
 
-        if (!assignation.phrases || !Array.isArray(assignation.phrases)) {
-            conteneur.innerHTML = `<p style="color:red; text-align:center;">Erreur : ce devoir ne contient pas de phrases valides.</p>`;
+        const phrases = Array.isArray(assignation.phrases) ? assignation.phrases : [];
+        if (phrases.length === 0) {
+            conteneur.innerHTML = `<p style="color:red; text-align:center;">Ce devoir ne contient aucune phrase.</p>`;
             return;
         }
 
-        assignation.phrases.forEa
+        phrases.forEach((p, idx) => {
+            const num = idx + 1;
+            const div = document.createElement('div');
+            div.className = "phrase-box";
+            const parts = p.q.includes('____') ? p.q.split('____') : p.q.split('___');
+
+            const dejaValide = reponsesValidees.hasOwnProperty(idx.toString());
+            const repSauvegardee = dejaValide ? reponsesValidees[idx.toString()] : "";
+
+            if (p.type === 'select') {
+                const options = Array.isArray(p.options) ? p.options : [];
+                let optionsHtml = `<option value="">---</option>` + options.map(o => {
+                    const sel = (dejaValide && o === repSauvegardee) ? 'selected' : '';
+                    return `<option value="${o}" ${sel}>${o}</option>`;
+                }).join('');
+
+                div.innerHTML = `
+                    <span class="phrase-num">${num}.</span>
+                    <span class="phrase-texte">
+                        ${parts[0]}
+                        <select class="champ-select ${dejaValide ? 'correct-input' : ''}" 
+                                id="input-q-${idx}" 
+                                onchange="verifierLigne(${idx})" 
+                                ${dejaValide ? 'disabled' : ''}>
+                            ${optionsHtml}
+                        </select>
+                        <span id="fb-q-${idx}">${dejaValide ? '<span class="mark-ok">✓</span>' : ''}</span>
+                        ${parts[1] || ""}
+                    </span>
+                `;
+            } else {
+                div.innerHTML = `
+                    <span class="phrase-num">${num}.</span>
+                    <span class="phrase-texte">
+                        ${parts[0]}
+                        <input type="text" 
+                               class="champ-reponse ${dejaValide ? 'correct-input' : ''}" 
+                               id="input-q-${idx}" 
+                               value="${repSauvegardee}" 
+                               placeholder="réponse..." 
+                               autocomplete="off" 
+                               ${dejaValide ? 'disabled' : ''}>
+                        <button type="button" class="btn-verifier" 
+                                id="btn-q-${idx}" 
+                                onclick="verifierLigne(${idx})" 
+                                ${dejaValide ? 'disabled' : ''}>
+                            Vérifier
+                        </button>
+                        <span id="fb-q-${idx}">${dejaValide ? '<span class="mark-ok">✓</span>' : ''}</span>
+                        ${parts[1] || ""}
+                    </span>
+                `;
+            }
+            conteneur.appendChild(div);
+
+            if (p.type === 'text' && !dejaValide) {
+                setTimeout(() => {
+                    const el = document.getElementById(`input-q-${idx}`);
+                    if (el) el.addEventListener('keypress', (e) => { if (e.key === 'Enter') verifierLigne(idx); });
+                }, 0);
+            }
+        });
+    };
+
+    window.recommencerDevoirParId = async function(id) {
+        if (!db) return;
+        if (confirm("Veux-tu réinitialiser ce devoir et le recommencer de zéro ?")) {
+            await db.collection("assignations").doc(id).update({
+                statut: "en_cours",
+                score: 0,
+                totalErreurs: 0,
+                reponsesValidees: {},
+                fautesDetails: []
+            });
+            lancerExerciceParId(id);
+        }
+    };
+
+    window.verifierLigne = async function(idx) {
+        if (!devoirActuel || !devoirActuel.phrases) return;
+        const p = devoirActuel.phrases[idx];
+        const input = document.getElementById(`input-q-${idx}`);
+        const fb = document.getElementById(`fb-q-${idx}`);
+        const btn = document.getElementById(`btn-q-${idx}`);
+
+        if (input.disabled) return;
+
+        const saisie = input.value.trim().toLowerCase();
+        if (!saisie) return;
+
+        const bonnesReponses = Array.isArray(p.a) ? p.a.map(a => a.trim().toLowerCase()) : [p.a.trim().toLowerCase()];
+
+        if (bonnesReponses.includes(saisie)) {
+            // BONNE RÉPONSE
+            input.classList.remove('incorrect-input');
+            input.classList.add('correct-input');
+            input.disabled = true;
+            if (btn) btn.disabled = true;
+            fb.innerHTML = '<span class="mark-ok">✓</span>';
+
+            reponsesValidees[idx.toString()] = saisie;
+            scoreActuel = Object.keys(reponsesValidees).length;
+            document.getElementById('exo-score').textContent = scoreActuel;
+
+            await synchroniserProgression(false);
+
+            const totalQ = devoirActuel.totalQuestions || devoirActuel.phrases.length;
+            if (scoreActuel === totalQ) {
+                setTimeout(() => {
+                    if (confirm("🎉 Bravo ! Tu as réussi toutes les phrases ! Veux-tu finaliser et rendre ce devoir ?")) {
+                        terminerEtEnregistrerDevoir();
+                    }
+                }, 400);
+            }
+        } else {
+            // FAUTE
+            erreursActuelles++;
+            document.getElementById('exo-erreurs').textContent = erreursActuelles;
+            input.classList.add('incorrect-input');
+            fb.innerHTML = '<span class="mark-err">✗</span>';
+
+            const attenduStr = Array.isArray(p.a) ? p.a.join(' / ') : p.a;
+            const phraseCorrigee = p.q.includes('____') ? p.q.replace('____', `[${attenduStr}]`) : p.q.replace('___', `[${attenduStr}]`);
+            
+            fautesEnregistrees.push({
+                phrase: phraseCorrigee,
+                reponseEleve: saisie,
+                attendu: attenduStr,
+                date: new Date().toLocaleTimeString("fr-FR")
+            });
+
+            await synchroniserProgression(false);
+            declencherTaquinerie();
+
+            input.focus();
+            if (p.type === 'text') input.select();
+        }
+    };
+
+    async function synchroniserProgression(forcerTermine) {
+        if (!db || !assignationIdActuelle) return;
+
+        const statutFinal = forcerTermine ? "termine" : "en_cours";
+
+        try {
+            await db.collection("assignations").doc(assignationIdActuelle).update({
+                statut: statutFinal,
+                score: scoreActuel,
+                totalErreurs: erreursActuelles,
+                reponsesValidees: reponsesValidees,
+                fautesDetails: fautesEnregistrees,
+                dateDerniereActivite: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        } catch(e) {
+            console.error("Erreur sync progression :", e);
+        }
+    }
+
+    window.sauvegarderEtQuitter = async function() {
+        if (!assignationIdActuelle) return retourTableauDeBord();
+
+        try {
+            await synchroniserProgression(false);
+            alert("💾 Progression sauvegardée ! Tu pourras reprendre ce devoir quand tu veux.");
+            retourTableauDeBord();
+        } catch(e) {
+            alert("Erreur de sauvegarde : " + e.message);
+        }
+    };
+
+    window.terminerEtEnregistrerDevoir = async function() {
+        if (!assignationIdActuelle) return;
+
+        const totalQ = devoirActuel.totalQuestions || (Array.isArray(devoirActuel.phrases) ? devoirActuel.phrases.length : 0);
+        const confirmation = confirm(`Voulez-vous vraiment terminer et envoyer ce devoir ?\n\nPhrases réussies : ${scoreActuel} / ${totalQ}\nFautes commises : ${erreursActuelles}`);
+        if (!confirmation) return;
+
+        try {
+            await synchroniserProgression(true);
+
+            document.getElementById('phrases-conteneur').style.display = 'none';
+            document.getElementById('box-actions-fin').style.display = 'none';
+
+            document.getElementById('recap-score-final').textContent = `Score obtenu : ${scoreActuel} / ${totalQ} (Erreurs : ${erreursActuelles})`;
+            document.getElementById('exo-termine-box').style.display = 'block';
+            document.getElementById('exo-termine-box').scrollIntoView({ behavior: 'smooth' });
+
+        } catch (e) {
+            alert("Erreur lors de l'enregistrement : " + e.message);
+        }
+    };
+
+    function declencherTaquinerie() {
+        let index = Math.min(erreursActuelles - 1, insultesPaliers.length - 1);
+        if (index < 0) index = 0;
+
+        const d = insultesPaliers[index];
+        const overlay = document.getElementById('punition-overlay');
+        const text = document.getElementById('punition-text');
+        const sub = document.getElementById('punition-sub');
+
+        text.textContent = d.kr;
+        sub.textContent = `${d.fr} (Faute n°${erreursActuelles})`;
+
+        text.style.animation = 'none';
+        text.offsetHeight;
+        text.style.animation = 'zoomTremble 0.4s ease-out';
+
+        overlay.classList.add('show');
+        if (timerOverlay) clearTimeout(timerOverlay);
+        timerOverlay = setTimeout(() => overlay.classList.remove('show'), 1300);
+    }
+
+    window.revoirFautesParId = function(id) {
+        const devoir = devoirsChargesMap[id];
+        if (!devoir) return;
+
+        const modal = document.getElementById('modal-fautes-eleve');
+        const titre = document.getElementById('modal-titre');
+        const conteneur = document.getElementById('modal-liste-fautes');
+
+        titre.textContent = `Tes erreurs sur "${devoir.devoirTitre || 'Devoir'}"`;
+
+        const fautes = Array.isArray(devoir.fautesDetails) ? devoir.fautesDetails : [];
+        let html = `<table>
+            <thead>
+                <tr>
+                    <th>Phrase</th>
+                    <th>Ta réponse</th>
+                    <th>Bonne réponse</th>
+                </tr>
+            </thead>
+            <tbody>`;
+
+        fautes.forEach(f => {
+            html += `
+                <tr>
+                    <td>${f.phrase || "-"}</td>
+                    <td style="color:var(--danger); font-weight:bold; text-decoration:line-through;">${f.reponseEleve || "(vide)"}</td>
+                    <td style="color:var(--success); font-weight:bold;">${f.attendu || "-"}</td>
+                </tr>
+            `;
+        });
+
+        html += `</tbody></table>`;
+        conteneur.innerHTML = html;
+        modal.style.display = "flex";
+    };
+
+    window.fermerModalFautes = function() {
+        document.getElementById('modal-fautes-eleve').style.display = "none";
+    };
+
+    window.retourTableauDeBord = function() {
+        document.getElementById('ecran-exercice').style.display = 'none';
+        document.getElementById('ecran-tableau-de-bord').style.display = 'block';
+    };
+
+    // Lancement garanti
+    verifierSession();
+</script>
+</body>
+</html>
