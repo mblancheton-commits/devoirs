@@ -179,7 +179,7 @@
                         <th>Statut</th>
                         <th>Score</th>
                         <th>Fautes</th>
-                        <th>Détail des erreurs</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="table-assignations-corps">
@@ -270,7 +270,7 @@ He is waiting ____ the bus stop.;at</div>
 </div>
 
 <script>
-    // --- 1. INITIALISATION FIREBASE BLINDÉE ---
+    // --- 1. INITIALISATION FIREBASE ---
     let db = null;
     try {
         const firebaseConfig = {
@@ -288,11 +288,6 @@ He is waiting ____ the bus stop.;at</div>
         db = firebase.firestore();
     } catch(e) {
         console.error("Erreur init Firebase :", e);
-        const statusEl = document.getElementById('db-status');
-        if (statusEl) {
-            statusEl.textContent = "Erreur de connexion Firebase";
-            statusEl.style.color = "red";
-        }
     }
 
     let listeEleves = [];
@@ -301,7 +296,6 @@ He is waiting ____ the bus stop.;at</div>
     let devoirsMap = {};
     let elevesMap = {};
 
-    // --- 2. GESTION DES ONGLETS FAIL-SAFE ---
     function basculerOnglet(tabId, btnElement) {
         try {
             document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
@@ -400,7 +394,7 @@ He is waiting ____ the bus stop.;at</div>
     }
 
     async function enregistrerDevoir() {
-        if (!db) return alert("Firebase n'est pas connecté.");
+        if (!db) return alert("Firebase non connecté.");
         const titre = document.getElementById('titre-devoir').value.trim();
         const phrases = parserTexteEnPhrases();
 
@@ -425,7 +419,7 @@ He is waiting ____ the bus stop.;at</div>
     }
 
     async function creerEleve() {
-        if (!db) return alert("Firebase n'est pas connecté.");
+        if (!db) return alert("Firebase non connecté.");
         const code = document.getElementById('nouvel-eleve-nom').value.trim();
         if (!code) return alert("Indiquez le code élève (ex: Lucas01).");
 
@@ -451,12 +445,44 @@ He is waiting ____ the bus stop.;at</div>
         }
     }
 
+    // SUPPRESSION DEVOIR EN CASCADE (Supprime aussi chez les élèves)
     async function supprimerDevoirParId(id) {
         if (!db) return;
         const d = devoirsMap[id];
         const nom = d ? d.titre : "ce devoir";
-        if (confirm(`Supprimer définitivement "${nom}" de la banque ?`)) {
-            await db.collection("devoirs").doc(id).delete();
+        
+        if (confirm(`Supprimer définitivement "${nom}" de la banque ?\n\n⚠️ Cela le retirera aussi automatiquement de tous les élèves à qui il a été assigné.`)) {
+            try {
+                // 1. Supprimer le devoir de la banque
+                await db.collection("devoirs").doc(id).delete();
+
+                // 2. Supprimer toutes les assignations associées chez les élèves
+                const snapshot = await db.collection("assignations").where("devoirId", "==", id).get();
+                const batch = db.batch();
+                snapshot.forEach(doc => {
+                    batch.delete(doc.ref);
+                });
+                await batch.commit();
+
+                alert(`✅ Le devoir "${nom}" a bien été supprimé partout.`);
+            } catch(e) {
+                alert("Erreur lors de la suppression : " + e.message);
+            }
+        }
+    }
+
+    // RETIRER UN DEVOIR ASSIGNÉ À UN ÉLÈVE SPÉCIFIQUE
+    async function supprimerAssignationParId(id) {
+        if (!db) return;
+        const a = assignationsMap[id];
+        const desc = a ? `le devoir "${a.devoirTitre}" de l'élève ${a.eleveCode}` : "ce devoir";
+
+        if (confirm(`Voulez-vous retirer ${desc} ?\n\nIl disparaîtra immédiatement de la page de l'élève.`)) {
+            try {
+                await db.collection("assignations").doc(id).delete();
+            } catch(e) {
+                alert("Erreur : " + e.message);
+            }
         }
     }
 
@@ -485,6 +511,7 @@ He is waiting ____ the bus stop.;at</div>
                     totalQuestions: devoir.phrases ? devoir.phrases.length : 0,
                     totalErreurs: 0,
                     fautesDetails: [],
+                    reponsesValidees: {},
                     dateAssignation: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
@@ -496,7 +523,7 @@ He is waiting ____ the bus stop.;at</div>
         }
     }
 
-    // --- 3. ÉCOUTE TEMPS RÉEL SÉCURISÉE ---
+    // --- 3. ÉCOUTE TEMPS RÉEL DES DONNÉES ---
     function ecouterDonnees() {
         if (!db) return;
 
@@ -533,7 +560,7 @@ He is waiting ____ the bus stop.;at</div>
             document.getElementById('table-eleves-corps').innerHTML = `<tr><td colspan="3" style="color:red; text-align:center;">Erreur : ${err.message}</td></tr>`;
         });
 
-        // 2. Liste des devoirs (BLINDÉE CONTRE LES DONNÉES INCOMPLÈTES)
+        // 2. Liste des devoirs (Banque)
         db.collection("devoirs").onSnapshot(snapshot => {
             listeDevoirs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             listeDevoirs.sort((a, b) => (b.dateCreation?.seconds || 0) - (a.dateCreation?.seconds || 0));
@@ -562,7 +589,7 @@ He is waiting ____ the bus stop.;at</div>
                     <td style="display:flex; gap:6px; flex-wrap:wrap;">
                         <button class="btn btn-sm" onclick="consulterDevoirParId('${d.id}')">👁️ Voir les phrases</button>
                         <button class="btn btn-sm btn-success" onclick="assignerDevoirParId('${d.id}')">➕ Assigner</button>
-                        <button class="btn btn-sm btn-danger" onclick="supprimerDevoirParId('${d.id}')">🗑️</button>
+                        <button class="btn btn-sm btn-danger" onclick="supprimerDevoirParId('${d.id}')" title="Supprimer de la banque et chez les élèves">🗑️</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -572,7 +599,7 @@ He is waiting ____ the bus stop.;at</div>
             document.getElementById('table-devoirs-corps').innerHTML = `<tr><td colspan="4" style="color:red; text-align:center;">Erreur : ${err.message}</td></tr>`;
         });
 
-        // 3. Suivi des résultats
+        // 3. Suivi des devoirs assignés
         db.collection("assignations").onSnapshot(snapshot => {
             const assignations = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             assignations.sort((a, b) => (b.dateAssignation?.seconds || 0) - (a.dateAssignation?.seconds || 0));
@@ -603,8 +630,9 @@ He is waiting ____ the bus stop.;at</div>
                     <td>${badgeStatut}</td>
                     <td><strong>${a.score || 0} / ${totalQ}</strong></td>
                     <td><strong style="color:var(--danger);">${a.totalErreurs || 0} faute(s)</strong></td>
-                    <td>
+                    <td style="display:flex; gap:6px;">
                         <button class="btn btn-sm" onclick="voirFautesParId('${a.id}')">🔍 Voir les erreurs</button>
+                        <button class="btn btn-sm btn-danger" onclick="supprimerAssignationParId('${a.id}')" title="Retirer ce devoir à cet élève">🗑️</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
