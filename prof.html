@@ -11,714 +11,1235 @@
 
     <style>
         :root {
-            --primary: #2c3e50;
-            --accent: #3498db;
-            --success: #27ae60;
-            --danger: #e74c3c;
+            --primary: #1e293b;
+            --accent: #3b82f6;
+            --success: #10b981;
+            --danger: #ef4444;
+            --purple: #8b5cf6;
             --bg: #f8fafc;
         }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: var(--bg);
-            color: #333;
-            margin: 0;
-            padding: 20px;
-        }
-        .container { max-width: 1100px; margin: 0 auto; }
-        
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 2px solid #e2e8f0;
-            padding-bottom: 15px;
-            margin-bottom: 25px;
-        }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); color: #1e293b; margin: 0; padding: 25px; }
+        .container { max-width: 1250px; margin: 0 auto; position: relative; z-index: 1; }
+        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 25px; }
         h1 { margin: 0; color: var(--primary); font-size: 1.6em; }
 
-        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
-        .tab-btn {
-            padding: 10px 20px;
-            background: #e2e8f0;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 1em;
-            color: #4a5568;
-            transition: all 0.2s;
-        }
-        .tab-btn.active { background: var(--primary); color: white; }
+        .tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+        .tab-btn { padding: 12px 18px; background: #e2e8f0; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; color: #475569; transition: all 0.2s; }
+        .tab-btn.active { background: var(--primary); color: white; box-shadow: 0 4px 10px rgba(30, 41, 59, 0.15); }
 
-        .card {
-            background: white;
-            padding: 25px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.08);
-            margin-bottom: 25px;
-        }
-        .card h2 { margin-top: 0; color: var(--primary); font-size: 1.25em; border-bottom: 1px solid #edf2f7; padding-bottom: 10px; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        .card h2 { margin-top: 0; color: var(--primary); font-size: 1.25em; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; }
 
-        label { display: block; font-weight: 600; margin-bottom: 6px; margin-top: 14px; font-size: 0.95em; }
-        input[type="text"], textarea, select {
-            width: 100%;
-            padding: 10px;
-            border: 2px solid #cbd5e0;
-            border-radius: 6px;
-            font-family: inherit;
-            box-sizing: border-box;
-            font-size: 0.95em;
-        }
-        input[type="text"]:focus, textarea:focus, select:focus {
-            outline: none; border-color: var(--accent);
-        }
+        label { display: block; font-weight: 600; margin-bottom: 6px; margin-top: 14px; font-size: 0.95em; color: #334155; }
+        input[type="text"], input[type="password"], textarea, select { width: 100%; padding: 11px; border: 2px solid #cbd5e0; border-radius: 8px; box-sizing: border-box; font-family: inherit; font-size: 0.95em; }
+        input[type="text"]:focus, input[type="password"]:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
 
-        .btn {
-            background: var(--accent);
-            color: white;
-            padding: 10px 18px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 0.95em;
-            transition: opacity 0.2s;
-        }
-        .btn:hover { opacity: 0.9; }
+        .btn { background: var(--accent); color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.2s; display: inline-block; }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
         .btn-success { background: var(--success); }
         .btn-danger { background: var(--danger); }
-        .btn-secondary { background: #718096; }
-        .btn-sm { padding: 6px 10px; font-size: 0.85em; }
+        .btn-purple { background: var(--purple); }
+        .btn-secondary { background: #64748b; }
+        .btn-sm { padding: 6px 12px; font-size: 0.85em; }
 
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid #edf2f7; font-size: 0.95em; }
-        th { background: #edf2f7; color: #4a5568; font-weight: 600; }
-        
-        .badge { padding: 3px 8px; border-radius: 4px; font-size: 0.85em; font-weight: bold; }
-        .badge-termine { background: #d4edda; color: #155724; }
-        .badge-cours { background: #fff3cd; color: #856404; }
-        .badge-nonfait { background: #f8d7da; color: #721c24; }
+        th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid #f1f5f9; font-size: 0.95em; }
+        th { background: #f8fafc; color: #475569; }
+        .ligne-cliquable { cursor: pointer; transition: background 0.15s; }
+        .ligne-cliquable:hover { background-color: #f1f5f9; }
 
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5);
-            justify-content: center; align-items: center;
-            z-index: 1000;
+        .badge-interactif { background: #fef3c7; color: #92400e; padding: 3px 8px; border-radius: 6px; font-weight: bold; font-size: 0.85em; }
+        .badge-chapitre { background: #e0e7ff; color: #3730a3; padding: 3px 8px; border-radius: 6px; font-weight: bold; font-size: 0.85em; }
+        .badge-emma { background: #fae8ff; color: #86198f; padding: 3px 8px; border-radius: 6px; font-weight: bold; font-size: 0.85em; }
+        .badge-auto { background: #dbeafe; color: #1e40af; padding: 3px 8px; border-radius: 6px; font-weight: bold; font-size: 0.85em; }
+
+        /* MODALES */
+        .modal { 
+            display: none; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(0,0,0,0.65); 
+            justify-content: center; 
+            align-items: center; 
+            z-index: 99999; 
+            pointer-events: none;
         }
-        .modal-content {
-            background: white;
-            padding: 25px;
-            border-radius: 8px;
-            width: 90%; max-width: 700px;
-            max-height: 80vh; overflow-y: auto;
+        .modal.ouverte {
+            display: flex !important;
+            pointer-events: auto !important;
+        }
+        .modal-content { 
+            background: white; 
+            padding: 30px; 
+            border-radius: 12px; 
+            width: 90%; 
+            max-width: 900px; 
+            max-height: 88vh; 
+            overflow-y: auto; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
         }
 
-        .code-box {
-            background: #2d3748;
-            color: #63b3ed;
-            padding: 12px;
-            border-radius: 6px;
-            font-family: monospace;
-            font-size: 0.88em;
-            margin-top: 8px;
-            white-space: pre-wrap;
-        }
-        .radio-group { display: flex; gap: 20px; margin-top: 8px; flex-wrap: wrap; }
-        .radio-option { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+        .pagination-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding-top: 10px; border-top: 1px solid #f1f5f9; }
+        .recherche-box { position: relative; margin-bottom: 12px; }
+        .recherche-box input { padding-left: 36px; }
+        .recherche-box span { position: absolute; left: 12px; top: 12px; color: #94a3b8; font-size: 1.1em; }
+
+        .liste-coches-eleves { max-height: 280px; overflow-y: auto; border: 2px solid #e2e8f0; border-radius: 8px; padding: 10px; margin-top: 10px; }
+        .item-coche-eleve { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; }
+        .item-coche-eleve:hover { background: #f8fafc; }
+        .item-coche-eleve input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+        .item-coche-eleve label { margin: 0; cursor: pointer; flex: 1; font-weight: normal; }
+
+        .subtabs-lang { display: flex; gap: 8px; margin: 15px 0; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; }
+        .subtab-lang-btn { background: #f1f5f9; border: 1px solid #cbd5e0; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.95em; }
+        .subtab-lang-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+        .apercu-section { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px; margin-bottom: 20px; }
+        .apercu-section h3 { margin-top: 0; color: var(--primary); font-size: 1.15em; border-bottom: 1px dashed #cbd5e0; padding-bottom: 8px; }
+        .quiz-item-apercu { background: white; border: 1px solid #cbd5e0; border-radius: 8px; padding: 14px; margin-bottom: 12px; }
+
+        .box-retouche-ia { background: #faf5ff; border: 2px solid #e9d5ff; border-radius: 12px; padding: 20px; margin-top: 25px; }
     </style>
+
+    <script>
+        let db = null;
+        try {
+            const firebaseConfig = {
+                apiKey: "AIzaSyBF72uEilOlNUnRB4_BqREpXCj6NvF4Mac",
+                authDomain: "exoanglais-6dd43.firebaseapp.com",
+                projectId: "exoanglais-6dd43",
+                storageBucket: "exoanglais-6dd43.firebasestorage.app",
+                messagingSenderId: "656075154329",
+                appId: "1:656075154329:web:cfe7ccb130ae55da02a908",
+                measurementId: "G-BWY78NT061"
+            };
+            if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+        } catch(e) { console.error("Firebase init:", e); }
+
+        const questionsBanqueEmma = [
+            "Bonjour ! Quel est ton MBTI ?",
+            "Bonjour ! Qu'est-ce que tu vas faire ce week-end ?",
+            "Bonjour ! Quel est ton plat préféré ? 🍝",
+            "Bonjour ! À quelle heure tu t'es réveillé ce matin ? ⏰",
+            "Bonjour ! Quelle est ta ville préférée en Corée ? 🇰🇷",
+            "Bonjour ! Quel est le dernier film que tu as vu ? 🎬",
+            "Bonjour ! Quel est ton groupe de K-Pop préféré ? 🎵",
+            "Bonjour ! Qu'est-ce que tu as mangé ce midi ? 🍱",
+            "Bonjour ! Quelle est ta couleur préférée ? 🎨",
+            "Bonjour ! Tu préfères l'été ou l'hiver ? ☀️/❄️",
+            "Bonjour ! Si tu gagnais au loto, qu'est-ce que tu achèterais ? 💰",
+            "Bonjour ! Tu préfères les chats 🐱 ou les chiens 🐶 ?",
+            "Bonjour ! Quelle tâche ménagère détestes-tu faire ? 🧹",
+            "Bonjour ! Tu bois du café ou du thé ? ☕",
+            "Bonjour ! Quelle est ton application préférée sur ton téléphone ? 📱",
+            "Bonjour ! Est-ce que tu as des frères et sœurs ? 👨‍👩‍👧‍👦",
+            "Bonjour ! Tu te lèves tôt ou tard ? 🦉",
+            "Bonjour ! Tu préfères la mer 🌊 ou la montagne 🏔️ ?",
+            "Bonjour ! Quel est le dernier livre que tu as lu ? 📖",
+            "Bonjour ! Quel temps fait-il aujourd'hui ? ☁️",
+            "Bonjour ! Quel est ton dessert préféré ? 🍰",
+            "Bonjour ! Qu'est-ce que tu as acheté récemment ? 🛍️",
+            "Bonjour ! À quoi penses-tu quand je dis 'France' ? 🇫🇷",
+            "Bonjour ! Quel est ton parfum de glace préféré ? 🍦",
+            "Bonjour ! Quel est le meilleur quartier à Séoul ? 🏙️",
+            "Bonjour ! Quel est ton fruit préféré ? 🍓",
+            "Bonjour ! Quelle série regardes-tu en ce moment ? 📺",
+            "Bonjour ! Tu préfères McDonald's ou Burger King ? 🍔",
+            "Bonjour ! Tu as peur des moustiques ? 🦟",
+            "Bonjour ! Quelle est ta spécialité en cuisine ? 👨‍🍳"
+        ];
+
+        let listeEleves = [];
+        let listeDevoirs = [];
+        let listeAssignations = [];
+        let devoirsMap = {};
+        let assignationsMap = {};
+        let eleveSelectionne = null;
+        let donneesIAPret = null;
+        let coursApercuModal = null;
+        let langueApercuActive = 'fr';
+
+        let devoirAAssigner = null;
+        let pageActuelleEleves = 1;
+        const parPage = 10;
+        let elevesFiltres = [];
+
+        window.basculerOnglet = function(tabId, btn) {
+            document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            const cible = document.getElementById(tabId);
+            if (cible) cible.style.display = 'block';
+            if (btn) btn.classList.add('active');
+            if (tabId === 'tab-eleves') fermerFicheEleve();
+        };
+
+        window.filtrerEleves = function() {
+            const input = document.getElementById('input-recherche-eleve');
+            const texte = (input ? input.value : '').trim().toLowerCase();
+            elevesFiltres = listeEleves.filter(e => (e.code || '').toLowerCase().includes(texte));
+            pageActuelleEleves = 1;
+            afficherTableauEleves();
+        };
+
+        window.changerPage = function(delta) {
+            const totalPages = Math.ceil(elevesFiltres.length / parPage) || 1;
+            const nouv = pageActuelleEleves + delta;
+            if (nouv >= 1 && nouv <= totalPages) {
+                pageActuelleEleves = nouv;
+                afficherTableauEleves();
+            }
+        };
+
+        function afficherTableauEleves() {
+            const tbody = document.getElementById('table-eleves-corps');
+            if (!tbody) return;
+            tbody.innerHTML = "";
+
+            const totalPages = Math.ceil(elevesFiltres.length / parPage) || 1;
+            const info = document.getElementById('info-pagination');
+            if (info) info.textContent = `Page ${pageActuelleEleves} sur ${totalPages} (${elevesFiltres.length} élèves)`;
+
+            const btnP = document.getElementById('btn-page-prec');
+            const btnS = document.getElementById('btn-page-suiv');
+            if (btnP) btnP.disabled = (pageActuelleEleves <= 1);
+            if (btnS) btnS.disabled = (pageActuelleEleves >= totalPages);
+
+            const debut = (pageActuelleEleves - 1) * parPage;
+            const pageItems = elevesFiltres.slice(debut, debut + parPage);
+
+            if (pageItems.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#64748b;">Aucun élève trouvé.</td></tr>`;
+                return;
+            }
+
+            pageItems.forEach(e => {
+                const nbDevoirs = listeAssignations.filter(a => a.eleveCode && a.eleveCode.toUpperCase() === (e.code || '').toUpperCase()).length;
+                const tr = document.createElement('tr');
+                tr.className = "ligne-cliquable";
+                tr.onclick = (evt) => {
+                    if (evt.target.tagName !== 'BUTTON') ouvrirFicheEleve(e.id);
+                };
+                tr.innerHTML = `
+                    <td><strong style="color:var(--accent); font-size:1.05em;">👤 ${e.code}</strong></td>
+                    <td><code>${e.cleApiPerso ? "● Clé personnalisée" : "(Clé par défaut)"}</code></td>
+                    <td><strong>${nbDevoirs}</strong> devoir(s)</td>
+                    <td><button type="button" class="btn btn-sm btn-purple" onclick="ouvrirFicheEleve('${e.id}')">⚙️ Gérer</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.ouvrirFicheEleve = function(eleveId) {
+            eleveSelectionne = listeEleves.find(e => e.id === eleveId);
+            if (!eleveSelectionne) return;
+
+            document.getElementById('vue-liste-eleves').style.display = 'none';
+            document.getElementById('vue-fiche-eleve').style.display = 'block';
+
+            document.getElementById('fiche-titre-code').textContent = eleveSelectionne.code;
+            document.getElementById('fiche-edit-code').value = eleveSelectionne.code;
+            document.getElementById('fiche-edit-cle').value = eleveSelectionne.cleApiPerso || "";
+
+            afficherDevoirsFicheEleve();
+        };
+
+        window.fermerFicheEleve = function() {
+            eleveSelectionne = null;
+            const fiche = document.getElementById('vue-fiche-eleve');
+            const liste = document.getElementById('vue-liste-eleves');
+            if (fiche) fiche.style.display = 'none';
+            if (liste) liste.style.display = 'block';
+        };
+
+        window.sauvegarderNouveauCodeEleve = async function() {
+            if (!eleveSelectionne) return;
+            const ancienCode = eleveSelectionne.code;
+            const nouvCode = document.getElementById('fiche-edit-code').value.trim().toUpperCase();
+
+            if (!nouvCode) return alert("Le code ne peut pas être vide.");
+            if (nouvCode === ancienCode) return alert("Aucun changement détecté.");
+
+            if (confirm(`Renommer l'élève "${ancienCode}" en "${nouvCode}" ?\nTous ses devoirs seront mis à jour.`)) {
+                await db.collection("eleves").doc(eleveSelectionne.id).update({ code: nouvCode });
+
+                const snap = await db.collection("assignations").where("eleveCode", "==", ancienCode).get();
+                const batch = db.batch();
+                snap.forEach(doc => batch.update(doc.ref, { eleveCode: nouvCode }));
+                await batch.commit();
+
+                eleveSelectionne.code = nouvCode;
+                document.getElementById('fiche-titre-code').textContent = nouvCode;
+                alert(`✅ Élève renommé en ${nouvCode} !`);
+            }
+        };
+
+        window.sauvegarderCleEleve = async function() {
+            if (!eleveSelectionne) return;
+            const cle = document.getElementById('fiche-edit-cle').value.trim();
+            await db.collection("eleves").doc(eleveSelectionne.id).update({ cleApiPerso: cle || null });
+            eleveSelectionne.cleApiPerso = cle || null;
+            alert("✅ Clé API mise à jour !");
+        };
+
+        window.supprimerEleveActif = async function() {
+            if (!eleveSelectionne) return;
+            const code = eleveSelectionne.code;
+
+            if (confirm(`Supprimer définitivement l'élève ${code} et tous ses devoirs associés ?`)) {
+                await db.collection("eleves").doc(eleveSelectionne.id).delete();
+                const snap = await db.collection("assignations").where("eleveCode", "==", code).get();
+                const batch = db.batch();
+                snap.forEach(doc => batch.delete(doc.ref));
+                await batch.commit();
+
+                alert(`✅ L'élève ${code} a été supprimé.`);
+                fermerFicheEleve();
+            }
+        };
+
+        function afficherDevoirsFicheEleve() {
+            if (!eleveSelectionne) return;
+            const tbody = document.getElementById('table-fiche-assignations-corps');
+            if (!tbody) return;
+            tbody.innerHTML = "";
+
+            const sesAssignations = listeAssignations.filter(a => a.eleveCode && a.eleveCode.toUpperCase() === eleveSelectionne.code.toUpperCase());
+
+            if (sesAssignations.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#64748b;">Aucun devoir assigné.</td></tr>`;
+                return;
+            }
+
+            sesAssignations.forEach(a => {
+                const tr = document.createElement('tr');
+                let badgeType = "";
+                let prog = "";
+                let btnAction = "";
+
+                if (a.typeDevoir === "emma") {
+                    badgeType = `<span class="badge-emma">🤖 Emma IA</span>`;
+                    const nb = Object.keys(a.retoursEmma || {}).length;
+                    const tot = (a.questions || []).length;
+                    prog = `${nb} / ${tot} questions répondues`;
+                    btnAction = `<button type="button" class="btn btn-sm btn-purple" onclick="voirRetoursEmmaProf('${a.id}')">🔍 Corrections</button>`;
+                } else if (a.typeDevoir === "interactif") {
+                    badgeType = a.estAutoEntrainement 
+                        ? `<span class="badge-auto">✨ Auto-entraînement</span>` 
+                        : `<span class="badge-interactif">⚡ Interactif</span>`;
+                    prog = `Score : <strong>${a.score || 0} / ${a.totalQuestions || 0}</strong>`;
+                } else {
+                    badgeType = `<span class="badge-chapitre">📖 Cours + Quiz</span>`;
+                    prog = `Accès modules`;
+                }
+
+                tr.innerHTML = `
+                    <td><strong>${a.devoirTitre}</strong></td>
+                    <td>${badgeType}</td>
+                    <td>${prog}</td>
+                    <td style="display:flex; gap:8px;">
+                        ${btnAction}
+                        <button type="button" class="btn btn-sm btn-danger" onclick="supprimerAssignation('${a.id}')">🗑️ Retirer</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function afficherDerniersDevoirsGlobaux() {
+            const tbody = document.getElementById('table-derniers-devoirs-corps');
+            if (!tbody) return;
+            tbody.innerHTML = "";
+
+            const copies = [...listeAssignations].filter(a => a.statut === "termine" || a.statut === "en_cours");
+            const dixDerniers = copies.slice(0, 10);
+
+            if (dixDerniers.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#64748b;">Aucun devoir récent.</td></tr>`;
+                return;
+            }
+
+            dixDerniers.forEach(a => {
+                const tr = document.createElement('tr');
+                let badgeType = "";
+                let statutInfo = "";
+                let actionBtn = "";
+
+                if (a.typeDevoir === "emma") {
+                    badgeType = `<span class="badge-emma">🤖 Emma IA</span>`;
+                    statutInfo = (a.statut === "termine") ? `<span style="color:var(--success); font-weight:bold;">✅ Terminé</span>` : `<span style="color:var(--accent);">💬 En cours</span>`;
+                    actionBtn = `<button type="button" class="btn btn-sm btn-purple" onclick="voirRetoursEmmaProf('${a.id}')">🔍 Voir l'échange</button>`;
+                } else if (a.typeDevoir === "interactif") {
+                    badgeType = a.estAutoEntrainement ? `<span class="badge-auto">✨ Entraînement</span>` : `<span class="badge-interactif">⚡ Interactif</span>`;
+                    statutInfo = `Score : <strong>${a.score || 0} / ${a.totalQuestions || 0}</strong>`;
+                } else {
+                    badgeType = `<span class="badge-chapitre">📖 Cours + Quiz</span>`;
+                    statutInfo = `Actif`;
+                }
+
+                tr.innerHTML = `
+                    <td><strong style="color:var(--accent); cursor:pointer;" onclick="ouvrirFicheEleveParCode('${a.eleveCode}')">👤 ${a.eleveCode}</strong></td>
+                    <td><strong>${a.devoirTitre}</strong></td>
+                    <td>${badgeType}</td>
+                    <td>${statutInfo}</td>
+                    <td>${actionBtn}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.ouvrirFicheEleveParCode = function(code) {
+            const e = listeEleves.find(x => (x.code || '').toUpperCase() === (code || '').toUpperCase());
+            if (e) {
+                basculerOnglet('tab-eleves', document.getElementById('btn-tab-eleves'));
+                ouvrirFicheEleve(e.id);
+            }
+        };
+
+        // ASSIGNATION
+        window.ouvrirModalAssignation = function(devoirId) {
+            devoirAAssigner = devoirsMap[devoirId];
+            if (!devoirAAssigner) return;
+
+            if (listeEleves.length === 0) {
+                return alert("Aucun élève enregistré. Ajoutez au moins un élève avant d'assigner.");
+            }
+
+            document.getElementById('assign-titre-devoir').textContent = devoirAAssigner.titre;
+            document.getElementById('recherche-assign-eleve').value = "";
+            
+            genererListeCochesEleves(listeEleves);
+            document.getElementById('modal-assignation').classList.add('ouverte');
+        };
+
+        function genererListeCochesEleves(eleves) {
+            const conteneur = document.getElementById('conteneur-coches-eleves');
+            if (!conteneur) return;
+            conteneur.innerHTML = "";
+
+            if (eleves.length === 0) {
+                conteneur.innerHTML = `<div style="color:#64748b; padding:10px; text-align:center;">Aucun élève ne correspond.</div>`;
+                return;
+            }
+
+            eleves.forEach(e => {
+                const div = document.createElement('div');
+                div.className = "item-coche-eleve";
+                div.innerHTML = `
+                    <input type="checkbox" id="chk-eleve-${e.id}" value="${e.code}" class="chk-assign-eleve">
+                    <label for="chk-eleve-${e.id}">👤 <strong>${e.code}</strong></label>
+                `;
+                conteneur.appendChild(div);
+            });
+        }
+
+        window.filtrerCochesAssignation = function() {
+            const txt = (document.getElementById('recherche-assign-eleve').value || '').trim().toLowerCase();
+            const filtrés = listeEleves.filter(e => (e.code || '').toLowerCase().includes(txt));
+            genererListeCochesEleves(filtrés);
+        };
+
+        window.basculerToutesLesCoches = function() {
+            const checkboxes = document.querySelectorAll('.chk-assign-eleve');
+            const tousCoches = Array.from(checkboxes).every(c => c.checked);
+            checkboxes.forEach(c => c.checked = !tousCoches);
+        };
+
+        window.fermerModalAssignation = function() {
+            devoirAAssigner = null;
+            document.getElementById('modal-assignation').classList.remove('ouverte');
+        };
+
+        window.confirmerAssignationGroupee = async function() {
+            if (!devoirAAssigner) return;
+
+            const selectionnes = Array.from(document.querySelectorAll('.chk-assign-eleve:checked')).map(c => c.value);
+            if (selectionnes.length === 0) return alert("Veuillez cocher au moins un élève !");
+
+            const btn = document.getElementById('btn-valider-assignation');
+            btn.disabled = true;
+            btn.textContent = "⏳ Assignation...";
+
+            try {
+                const batch = db.batch();
+                selectionnes.forEach(codeEleve => {
+                    const nouvRef = db.collection("assignations").doc();
+                    if (devoirAAssigner.typeDevoir === "emma") {
+                        batch.set(nouvRef, {
+                            eleveCode: codeEleve,
+                            devoirId: devoirAAssigner.id,
+                            devoirTitre: devoirAAssigner.titre,
+                            typeDevoir: "emma",
+                            questions: devoirAAssigner.questions || [],
+                            statut: "non_commence",
+                            retoursEmma: {},
+                            dateAssignation: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    } else if (devoirAAssigner.typeDevoir === "interactif") {
+                        batch.set(nouvRef, {
+                            eleveCode: codeEleve,
+                            devoirId: devoirAAssigner.id,
+                            devoirTitre: devoirAAssigner.titre,
+                            typeDevoir: "interactif",
+                            phrases: devoirAAssigner.phrases || [],
+                            statut: "non_commence",
+                            score: 0,
+                            totalQuestions: (devoirAAssigner.phrases || []).length,
+                            totalErreurs: 0,
+                            fautesDetails: [],
+                            reponsesValidees: {},
+                            dateAssignation: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    } else {
+                        const suiviBlocs = { cours: { statut: "non_lu" } };
+                        (devoirAAssigner.blocs_exercices || []).forEach(b => { suiviBlocs[b.id] = { statut: "non_fait", reponses: {} }; });
+                        batch.set(nouvRef, {
+                            eleveCode: codeEleve,
+                            devoirId: devoirAAssigner.id,
+                            devoirTitre: devoirAAssigner.titre,
+                            typeDevoir: "chapitre_cours",
+                            points_importants: devoirAAssigner.points_importants || null,
+                            quiz_theorique: devoirAAssigner.quiz_theorique || null,
+                            bloc_cours: devoirAAssigner.bloc_cours || null,
+                            blocs_exercices: devoirAAssigner.blocs_exercices || [],
+                            suiviBlocs: suiviBlocs,
+                            dateAssignation: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    }
+                });
+
+                await batch.commit();
+                alert(`✅ Assigné avec succès à ${selectionnes.length} élève(s) !`);
+                fermerModalAssignation();
+            } catch(err) {
+                alert("Erreur : " + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "✅ Assigner aux élèves cochés";
+            }
+        };
+
+        window.creerEleve = async function() {
+            const input = document.getElementById('nouvel-eleve-code');
+            const code = input ? input.value.trim().toUpperCase() : "";
+            const cle = document.getElementById('nouvel-eleve-cle').value.trim();
+            if (!code) return alert("Indiquez le code élève (ex: Lucas01).");
+
+            await db.collection("eleves").add({
+                code: code,
+                cleApiPerso: cle || null,
+                dateCreation: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            input.value = "";
+            document.getElementById('nouvel-eleve-cle').value = "";
+            alert(`✅ Élève ${code} enregistré !`);
+        };
+
+        window.supprimerAssignation = async function(id) {
+            if (confirm("Retirer ce devoir à l'élève ?")) {
+                await db.collection("assignations").doc(id).delete();
+            }
+        };
+
+        window.supprimerDevoir = async function(id) {
+            if (confirm("Supprimer ce devoir de la banque et chez tous les élèves ?")) {
+                await db.collection("devoirs").doc(id).delete();
+                const snap = await db.collection("assignations").where("devoirId", "==", id).get();
+                const batch = db.batch();
+                snap.forEach(doc => batch.delete(doc.ref));
+                await batch.commit();
+            }
+        };
+
+        window.piocherQuestionsEmma = function() {
+            const melange = [...questionsBanqueEmma].sort(() => 0.5 - Math.random());
+            document.getElementById('questions-emma-texte').value = melange.slice(0, 10).join('\n');
+        };
+
+        window.enregistrerDevoirEmma = async function() {
+            const titre = document.getElementById('titre-emma').value.trim();
+            const lignes = document.getElementById('questions-emma-texte').value.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            if (!titre || lignes.length === 0) return alert("Indiquez un titre et des questions.");
+
+            await db.collection("devoirs").add({
+                titre: titre,
+                typeDevoir: "emma",
+                questions: lignes,
+                dateCreation: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            alert("✅ Exercice IA avec Emma enregistré !");
+            document.getElementById('titre-emma').value = "";
+            document.getElementById('questions-emma-texte').value = "";
+            basculerOnglet('tab-devoirs', document.getElementById('btn-tab-devoirs'));
+        };
+
+        window.ajusterFormulaireManuel = function() {
+            const type = document.querySelector('input[name="type-exo-manuel"]:checked').value;
+            document.getElementById('box-options-identiques').style.display = (type === 'select-identique') ? 'block' : 'none';
+        };
+
+        window.enregistrerDevoirManuel = async function() {
+            const titre = document.getElementById('titre-devoir-manuel').value.trim();
+            const type = document.querySelector('input[name="type-exo-manuel"]:checked').value;
+            const lignes = document.getElementById('texte-brut-manuel').value.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            if (!titre || lignes.length === 0) return alert("Remplissez le titre et les phrases.");
+
+            const phrases = [];
+            lignes.forEach(l => {
+                const p = l.split(';').map(x => x.trim());
+                if (p.length < 2) return;
+                if (type === 'select-identique') {
+                    const opts = document.getElementById('options-globales').value.split(',').map(o => o.trim());
+                    phrases.push({ q: p[0], type: 'select', options: opts, a: [p[1]] });
+                } else if (type === 'select-variable') {
+                    const rep = p[p.length - 1];
+                    const opts = p.slice(1, p.length - 1);
+                    if (!opts.includes(rep)) opts.push(rep);
+                    phrases.push({ q: p[0], type: 'select', options: opts, a: [rep] });
+                } else {
+                    phrases.push({ q: p[0], type: 'text', a: p[1].split('|').map(v => v.trim()) });
+                }
+            });
+
+            await db.collection("devoirs").add({
+                titre: titre,
+                typeDevoir: "interactif",
+                phrases: phrases,
+                dateCreation: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            alert("✅ Devoir interactif enregistré !");
+            basculerOnglet('tab-devoirs', document.getElementById('btn-tab-devoirs'));
+        };
+
+        // ANALYSE PDF
+        window.analyserPDFAvecIA = async function() {
+            const urlApi = document.getElementById('api-url').value.trim();
+            const fileInput = document.getElementById('pdf-file-input');
+            const modelChoisi = document.getElementById('select-ia-model').value;
+            const cleNano = document.getElementById('nanogpt-key-input').value.trim();
+
+            if (!urlApi || !fileInput.files[0]) return alert("Indiquez l'URL Render et le fichier PDF.");
+            if (cleNano) localStorage.setItem("nanoGptKey", cleNano);
+
+            const btn = document.getElementById('btn-analyser-pdf');
+            btn.disabled = true;
+            btn.textContent = `⏳ Analyse avec ${modelChoisi}...`;
+
+            const formData = new FormData();
+            formData.append("pdf", fileInput.files[0]);
+
+            try {
+                const res = await fetch(urlApi.replace(/\/$/, "") + "/api/analyser-pdf", {
+                    method: "POST",
+                    headers: { 
+                        "x-model-choice": modelChoisi,
+                        "x-nanogpt-key": cleNano
+                    },
+                    body: formData
+                });
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+
+                donneesIAPret = data;
+                document.getElementById('ia-titre').value = data.titre || "Chapitre de cours";
+                
+                changerLangueApercu('fr', document.getElementById('subtab-btn-fr'));
+                document.getElementById('card-resultat-ia').style.display = "block";
+                alert(`✅ Analyse réussie avec ${modelChoisi} !`);
+
+            } catch(e) {
+                alert("Erreur lors de l'analyse : " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "🚀 Lancer l'analyse du cours";
+            }
+        };
+
+        window.appliquerRetoucheIA = async function() {
+            if (!donneesIAPret) return alert("Aucun cours n'est actuellement en cours d'analyse.");
+
+            const instruction = document.getElementById('instruction-retouche-texte').value.trim();
+            if (!instruction) return alert("Veuillez formuler votre demande de modification à l'IA.");
+
+            const urlApi = document.getElementById('api-url').value.trim();
+            const modelChoisi = document.getElementById('select-ia-model').value;
+            const cleNano = document.getElementById('nanogpt-key-input').value.trim();
+
+            const btn = document.getElementById('btn-appliquer-retouche');
+            btn.disabled = true;
+            btn.textContent = "⏳ L'IA retouche le cours complet...";
+
+            try {
+                const res = await fetch(urlApi.replace(/\/$/, "") + "/api/ajuster-contenu", {
+                    method: "POST",
+                    headers: { 
+                        "Content-Type": "application/json",
+                        "x-model-choice": modelChoisi,
+                        "x-nanogpt-key": cleNano
+                    },
+                    body: JSON.stringify({
+                        contenuActuel: donneesIAPret,
+                        instruction: instruction
+                    })
+                });
+
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+
+                donneesIAPret = data;
+                document.getElementById('ia-titre').value = data.titre || document.getElementById('ia-titre').value;
+
+                rendreApercuTrilingue(langueApercuActive);
+                document.getElementById('instruction-retouche-texte').value = "";
+                alert("✅ Modifications appliquées avec succès !");
+
+            } catch(e) {
+                alert("Erreur lors de la retouche IA : " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "✨ Appliquer les modifications";
+            }
+        };
+
+        window.changerLangueApercu = function(lang, btn) {
+            langueApercuActive = lang;
+            document.querySelectorAll('.subtabs-lang .subtab-lang-btn').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            rendreApercuTrilingue(lang);
+        };
+
+        function rendreApercuTrilingue(lang) {
+            document.getElementById('zone-apercu-dynamique').innerHTML = construireHtmlContenuCours(donneesIAPret, lang);
+        }
+
+        // =========================================================================
+        // NOUVEL ORDRE PÉDAGOGIQUE STRICT : COURS ➡️ MÉMO POINTS CLÉS ➡️ QUIZ ➡️ EXOS
+        // =========================================================================
+        function construireHtmlContenuCours(data, lang) {
+            if (!data) return "<p>Aucune donnée disponible.</p>";
+
+            // 1. Fiches de Cours Théorique
+            const slides = (data.bloc_cours && data.bloc_cours.slides) ? data.bloc_cours.slides : [];
+            const htmlCours = slides.map(s => {
+                let texte = s.contenu_fr || "";
+                if (lang === 'ko' && s.contenu_ko) texte = s.contenu_ko;
+                else if (lang === 'en' && s.contenu_en) texte = s.contenu_en;
+
+                return `
+                    <div style="border-bottom:1px solid #e2e8f0; padding-bottom:12px; margin-bottom:14px;">
+                        <h4 style="margin:0 0 6px 0; color:var(--accent); font-size:1.1em;">${s.titre || `Fiche ${s.numero}`}</h4>
+                        <p style="margin:0; white-space:pre-wrap; line-height:1.7;">${texte}</p>
+                    </div>
+                `;
+            }).join('') || "<p style='color:#64748b;'>Aucune fiche de cours.</p>";
+
+            // 2. Points Importants de la Leçon (Synthèse)
+            const points = (data.points_importants && data.points_importants[lang]) ? data.points_importants[lang] : (data.points_importants ? (data.points_importants.fr || []) : []);
+            const htmlPoints = points.map(pt => `<li>${pt}</li>`).join('');
+
+            // 3. Quiz Théorique Intermédiaire
+            const questions = (data.quiz_theorique && data.quiz_theorique.questions) ? data.quiz_theorique.questions : [];
+            let htmlQuiz = "";
+            if (questions.length === 0) {
+                htmlQuiz = "<p style='color:#64748b;'>Aucun quiz généré.</p>";
+            } else {
+                htmlQuiz = questions.map((q, idx) => {
+                    const intitule = (q.question && q.question[lang]) ? q.question[lang] : (q.question ? q.question.fr : "Question");
+                    const opts = (q.options && q.options[lang]) ? q.options[lang] : (q.options ? q.options.fr : []);
+                    const explic = (q.explication && q.explication[lang]) ? q.explication[lang] : (q.explication ? q.explication.fr : "");
+
+                    const optsHtml = opts.map((opt, oIdx) => {
+                        const estBonne = (oIdx === q.reponse_correcte_index);
+                        return `
+                            <div style="padding:6px 10px; margin:4px 0; border-radius:6px; background:${estBonne ? '#ecfdf5' : '#f8fafc'}; border:1px solid ${estBonne ? '#10b981' : '#e2e8f0'}; font-weight:${estBonne ? 'bold' : 'normal'}; color:${estBonne ? '#065f46' : 'inherit'};">
+                                ${String.fromCharCode(65 + oIdx)}. ${opt} ${estBonne ? '✅ (Bonne réponse)' : ''}
+                            </div>
+                        `;
+                    }).join('');
+
+                    return `
+                        <div class="quiz-item-apercu">
+                            <strong style="color:var(--primary); font-size:1.05em;">Question ${idx + 1} :</strong> ${intitule}
+                            <div style="margin:10px 0;">${optsHtml}</div>
+                            <div style="background:#f1f5f9; padding:8px 12px; border-radius:6px; font-size:0.9em; color:#334155;">
+                                💡 <strong>Explication :</strong> ${explic}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // 4. Blocs d'Exercices Finaux
+            const exos = data.blocs_exercices || [];
+            const htmlExos = exos.map((b, bIdx) => `
+                <div style="background:white; border:1px solid #cbd5e0; border-radius:8px; padding:14px; margin-bottom:12px;">
+                    <h4 style="margin:0 0 6px 0; color:var(--primary);">${b.titre || `Exercice ${bIdx + 1}`} - <span style="font-weight:normal; font-size:0.9em; color:#64748b;">${b.consigne || ''}</span></h4>
+                    <ol style="margin:8px 0 0 20px; line-height:1.8;">
+                        ${(b.questions || []).map(q => `<li>${q.q}</li>`).join('')}
+                    </ol>
+                </div>
+            `).join('') || "<p style='color:#64748b;'>Aucun bloc d'exercices.</p>";
+
+            return `
+                <!-- 1. EN PREMIER : LE COURS THÉORIQUE -->
+                <div class="apercu-section" style="border-left: 6px solid #8b5cf6;">
+                    <h3>📖 1. Fiches de Cours Théorique</h3>
+                    ${htmlCours}
+                </div>
+
+                <!-- 2. EN DEUXIÈME : LES POINTS CLÉS (SYNTHÈSE) -->
+                <div class="apercu-section" style="border-left: 6px solid #3b82f6;">
+                    <h3>💡 2. Points Importants de la Leçon (Synthèse)</h3>
+                    <ul style="margin:6px 0 0 20px; line-height:1.8;">
+                        ${htmlPoints}
+                    </ul>
+                </div>
+
+                <!-- 3. EN TROISIÈME : LE QUIZ THÉORIQUE -->
+                <div class="apercu-section" style="border-left: 6px solid #10b981;">
+                    <h3>🧠 3. Quiz Théorique Intermédiaire (${questions.length} questions)</h3>
+                    ${htmlQuiz}
+                </div>
+
+                <!-- 4. EN DERNIER : LES EXERCICES D'APPLICATION -->
+                <div class="apercu-section" style="border-left: 6px solid #f59e0b;">
+                    <h3>✍️ 4. Blocs d'Exercices Pratiques (${exos.length} blocs)</h3>
+                    ${htmlExos}
+                </div>
+            `;
+        }
+
+        window.sauvegarderDevoirIA = async function() {
+            if (!donneesIAPret) return;
+            await db.collection("devoirs").add({
+                titre: document.getElementById('ia-titre').value.trim() || donneesIAPret.titre,
+                typeDevoir: "chapitre_cours",
+                points_importants: donneesIAPret.points_importants || null,
+                quiz_theorique: donneesIAPret.quiz_theorique || null,
+                bloc_cours: donneesIAPret.bloc_cours || null,
+                blocs_exercices: donneesIAPret.blocs_exercices || [],
+                dateCreation: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            alert("✅ Chapitre complet enregistré dans la banque !");
+            document.getElementById('card-resultat-ia').style.display = "none";
+            basculerOnglet('tab-devoirs', document.getElementById('btn-tab-devoirs'));
+        };
+
+        window.ouvrirApercuCoursDepuisBanque = function(devoirId) {
+            coursApercuModal = devoirsMap[devoirId];
+            if (!coursApercuModal) return;
+
+            document.getElementById('modal-apercu-titre').textContent = coursApercuModal.titre;
+            changerLangueModalApercu('fr');
+            document.getElementById('modal-apercu-cours').classList.add('ouverte');
+        };
+
+        window.changerLangueModalApercu = function(lang) {
+            document.getElementById('btn-modal-fr').className = "subtab-lang-btn" + (lang === 'fr' ? ' active' : '');
+            document.getElementById('btn-modal-en').className = "subtab-lang-btn" + (lang === 'en' ? ' active' : '');
+            document.getElementById('btn-modal-ko').className = "subtab-lang-btn" + (lang === 'ko' ? ' active' : '');
+            document.getElementById('modal-apercu-contenu').innerHTML = construireHtmlContenuCours(coursApercuModal, lang);
+        };
+
+        window.voirRetoursEmmaProf = function(assignationId) {
+            const a = assignationsMap[assignationId];
+            if (!a) return;
+
+            const modal = document.getElementById('modal-fautes');
+            document.getElementById('modal-titre').textContent = `Corrections Emma - ${a.eleveCode}`;
+
+            const retours = a.retoursEmma || {};
+            let html = `<div style="line-height:1.7;">`;
+
+            (a.questions || []).forEach((q, idx) => {
+                const r = retours[idx];
+                html += `<div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:15px; margin-bottom:15px;">
+                    <strong style="color:var(--primary);">Q${idx+1} : ${q}</strong><br>`;
+                if (r) {
+                    html += `👀 <strong>Phrase élève</strong> : "${r.phrase_eleve}"<br>
+                             💬 <strong>Emma</strong> : ${r.reponse_amicale}<br>`;
+                    if (r.traduction_reponse) html += `🌐 <em>Traduction Emma</em> : ${r.traduction_reponse}<br>`;
+                    html += `✅ <strong>Ce qui est bien</strong> : ${r.ce_qui_est_bien}<br>
+                             ❌ <strong>Fautes</strong> : ${r.les_fautes}<br>
+                             ➡️ <strong>Corrigé</strong> : <strong style="color:var(--success);">${r.phrase_corrigee}</strong><br>`;
+                    if (r.traduction_phrase_corrigee) html += `🌐 <em>Traduction corrigé</em> : ${r.traduction_phrase_corrigee}<br>`;
+                    html += `💡 <strong>Améliorations</strong> : ${r.ameliorations}`;
+                } else {
+                    html += `<span style="color:#aaa;">(Pas encore répondu)</span>`;
+                }
+                html += `</div>`;
+            });
+            html += `</div>`;
+            document.getElementById('modal-contenu').innerHTML = html;
+            modal.classList.add('ouverte');
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const cleStockee = localStorage.getItem("nanoGptKey");
+            if (cleStockee && document.getElementById('nanogpt-key-input')) {
+                document.getElementById('nanogpt-key-input').value = cleStockee;
+            }
+
+            if (!db) return;
+
+            db.collection("eleves").orderBy("dateCreation", "desc").onSnapshot(snap => {
+                listeEleves = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                filtrerEleves();
+            });
+
+            db.collection("devoirs").orderBy("dateCreation", "desc").onSnapshot(snap => {
+                listeDevoirs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                devoirsMap = {};
+                listeDevoirs.forEach(d => { devoirsMap[d.id] = d; });
+
+                const tbody = document.getElementById('table-devoirs-corps');
+                if (!tbody) return;
+                tbody.innerHTML = "";
+                listeDevoirs.forEach(d => {
+                    const tr = document.createElement('tr');
+                    let badge = "";
+                    let info = "";
+                    let btnApercu = "";
+
+                    if (d.typeDevoir === "emma") {
+                        badge = `<span class="badge-emma">🤖 Emma IA</span>`;
+                        info = `${(d.questions || []).length} questions`;
+                    } else if (d.typeDevoir === "interactif") {
+                        badge = `<span class="badge-interactif">⚡ Interactif</span>`;
+                        info = `${(d.phrases || []).length} phrases`;
+                    } else {
+                        badge = `<span class="badge-chapitre">📖 Cours + Quiz</span>`;
+                        info = `Fiches + Quiz + ${(d.blocs_exercices || []).length} blocs`;
+                        btnApercu = `<button type="button" class="btn btn-sm btn-purple" onclick="ouvrirApercuCoursDepuisBanque('${d.id}')">👁️ Aperçu complet</button>`;
+                    }
+
+                    tr.innerHTML = `
+                        <td><strong>${d.titre}</strong></td>
+                        <td>${badge}</td>
+                        <td>${info}</td>
+                        <td style="display:flex; gap:6px;">
+                            ${btnApercu}
+                            <button type="button" class="btn btn-sm btn-success" onclick="ouvrirModalAssignation('${d.id}')">➕ Assigner</button>
+                            <button type="button" class="btn btn-sm btn-danger" onclick="supprimerDevoir('${d.id}')">🗑️</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            });
+
+            db.collection("assignations").orderBy("dateAssignation", "desc").onSnapshot(snap => {
+                listeAssignations = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                assignationsMap = {};
+                listeAssignations.forEach(a => { assignationsMap[a.id] = a; });
+
+                afficherTableauEleves();
+                afficherDerniersDevoirsGlobaux();
+                if (eleveSelectionne) afficherDevoirsFicheEleve();
+            });
+        });
+    </script>
 </head>
 <body>
 
 <div class="container">
     <header>
         <h1>🎓 Tableau de bord Enseignant</h1>
-        <div><span id="db-status" style="color:var(--success); font-weight:bold;">● Connecté à Firebase</span></div>
+        <div><span style="color:var(--success); font-weight:bold;">● Connecté à Firebase</span></div>
     </header>
 
     <div class="tabs">
-        <button class="tab-btn active" id="btn-tab-eleves" onclick="basculerOnglet('tab-eleves', this)">👥 Gestion des Élèves & Résultats</button>
-        <button class="tab-btn" id="btn-tab-creer" onclick="basculerOnglet('tab-creer', this)">➕ Créer un Devoir</button>
-        <button class="tab-btn" id="btn-tab-devoirs" onclick="basculerOnglet('tab-devoirs', this)">📚 Banque de Devoirs</button>
+        <button type="button" class="tab-btn active" id="btn-tab-eleves" onclick="basculerOnglet('tab-eleves', this)">👥 Élèves & Suivi</button>
+        <button type="button" class="tab-btn" id="btn-tab-emma" onclick="basculerOnglet('tab-emma', this)">🤖 Créer un Exercice IA (Emma)</button>
+        <button type="button" class="tab-btn" id="btn-tab-creer-manuel" onclick="basculerOnglet('tab-creer-manuel', this)">⚡ Devoir Interactif (Copier-coller)</button>
+        <button type="button" class="tab-btn" id="btn-tab-pdf" onclick="basculerOnglet('tab-pdf', this)">📄 Importer depuis un PDF (IA)</button>
+        <button type="button" class="tab-btn" id="btn-tab-devoirs" onclick="basculerOnglet('tab-devoirs', this)">📚 Banque de Devoirs</button>
     </div>
 
-    <!-- ONGLET 1 : ÉLÈVES & SUIVI -->
+    <!-- ONGLET 1 : ÉLÈVES & SUIVI GLOBAL -->
     <div id="tab-eleves" class="tab-pane">
-        <div class="card">
-            <h2>Ajouter un profil élève</h2>
-            <div style="display: flex; gap: 10px;">
-                <input type="text" id="nouvel-eleve-nom" placeholder="Code ou Nom de l'élève (ex: Lucas01)">
-                <button class="btn btn-success" onclick="creerEleve()">Ajouter l'élève</button>
+
+        <div id="vue-liste-eleves">
+            <div class="card">
+                <h2>Ajouter un profil élève</h2>
+                <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                    <input type="text" id="nouvel-eleve-code" placeholder="Code élève (ex: Lucas01)" style="flex:1;">
+                    <input type="text" id="nouvel-eleve-cle" placeholder="Clé API Gemini (Optionnel)" style="flex:1;">
+                    <button type="button" class="btn btn-success" onclick="creerEleve()">Ajouter l'élève</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>📋 Annuaire des Élèves (Cliquez sur un élève pour le gérer)</h2>
+                
+                <div class="recherche-box">
+                    <span>🔍</span>
+                    <input type="text" id="input-recherche-eleve" placeholder="Rechercher par code élève..." oninput="filtrerEleves()">
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Code Élève</th>
+                            <th>Clé personnalisée</th>
+                            <th>Devoirs & Entraînements</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-eleves-corps">
+                        <tr><td colspan="4">Chargement...</td></tr>
+                    </tbody>
+                </table>
+
+                <div class="pagination-bar">
+                    <button type="button" class="btn btn-secondary btn-sm" id="btn-page-prec" onclick="changerPage(-1)">◀ Précédent</button>
+                    <span id="info-pagination" style="font-size:0.9em; color:#64748b;">Page 1 sur 1</span>
+                    <button type="button" class="btn btn-secondary btn-sm" id="btn-page-suiv" onclick="changerPage(1)">Suivant ▶</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>⏱️ 10 Derniers Devoirs Réalisés (Toute la classe)</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Élève</th>
+                            <th>Devoir</th>
+                            <th>Type</th>
+                            <th>Statut / Résultat</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-derniers-devoirs-corps">
+                        <tr><td colspan="5">Chargement...</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
-        <div class="card">
-            <h2>📋 Mes Élèves enregistrés</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Code / Identifiant</th>
-                        <th>Date de création</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="table-eleves-corps">
-                    <tr><td colspan="3" style="text-align:center; color:#888;">Chargement...</td></tr>
-                </tbody>
-            </table>
+        <div id="vue-fiche-eleve" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <button type="button" class="btn btn-secondary" onclick="fermerFicheEleve()">← Revenir à la liste des élèves</button>
+                <button type="button" class="btn btn-danger" onclick="supprimerEleveActif()">🗑️ Supprimer définitivement cet élève</button>
+            </div>
+
+            <div class="card" style="border-left: 6px solid var(--accent);">
+                <h2>Fiche de l'élève : <span id="fiche-titre-code" style="color:var(--accent);">-</span></h2>
+                
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-top:15px;">
+                    <div>
+                        <label>Modifier le code élève :</label>
+                        <div style="display:flex; gap:10px;">
+                            <input type="text" id="fiche-edit-code">
+                            <button type="button" class="btn btn-success" onclick="sauvegarderNouveauCodeEleve()">Renommer</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label>Clé API Gemini personnalisée :</label>
+                        <div style="display:flex; gap:10px;">
+                            <input type="text" id="fiche-edit-cle" placeholder="AIzaSy... (laisser vide si aucune)">
+                            <button type="button" class="btn btn-purple" onclick="sauvegarderCleEleve()">Enregistrer Clé</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>📚 Devoirs & Auto-entraînements de cet élève</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Devoir</th>
+                            <th>Type</th>
+                            <th>Progression / Score</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-fiche-assignations-corps">
+                        <tr><td colspan="4">Chargement...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
+    </div>
+
+    <!-- ONGLET 2 : CRÉER UN EXERCICE IA (EMMA) -->
+    <div id="tab-emma" class="tab-pane" style="display:none;">
         <div class="card">
-            <h2>📊 Devoirs assignés & Résultats détaillés</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Code Élève</th>
-                        <th>Devoir</th>
-                        <th>Statut</th>
-                        <th>Score</th>
-                        <th>Fautes</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="table-assignations-corps">
-                    <tr><td colspan="6" style="text-align:center; color:#888;">Aucun devoir assigné.</td></tr>
-                </tbody>
-            </table>
+            <h2>🤖 Créer un Exercice IA avec Emma (Flash Lite - 500 req/j)</h2>
+            <p style="color:#64748b;">Emma tourne exclusivement sur les modèles <strong>Flash Lite (3.5 Lite / 3.1 Lite)</strong> avec un quota de <strong>500 requêtes gratuites par jour</strong>.</p>
+
+            <label for="titre-emma">1. Titre de l'exercice :</label>
+            <input type="text" id="titre-emma" placeholder="Ex: Discussion avec Emma : Mes goûts et loisirs">
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
+                <label style="margin:0;">2. Questions posées par Emma (une par ligne) :</label>
+                <button type="button" class="btn btn-sm btn-purple" onclick="piocherQuestionsEmma()">🎲 Piocher 10 questions d'Emma</button>
+            </div>
+            
+            <textarea id="questions-emma-texte" rows="10" placeholder="Bonjour ! Qu'est-ce que tu as mangé ce midi ?&#10;Bonjour ! Quelle est ta ville préférée ?&#10;Bonjour ! Tu préfères l'été ou l'hiver ?"></textarea>
+
+            <div style="margin-top:20px;">
+                <button type="button" class="btn btn-success" onclick="enregistrerDevoirEmma()">💾 Enregistrer cet Exercice IA dans ma Banque</button>
+            </div>
         </div>
     </div>
 
-    <!-- ONGLET 2 : CRÉATION DEVOIR -->
-    <div id="tab-creer" class="tab-pane" style="display: none;">
+    <!-- ONGLET 3 : CRÉER UN DEVOIR INTERACTIF RAPIDE -->
+    <div id="tab-creer-manuel" class="tab-pane" style="display:none;">
         <div class="card">
-            <h2>Nouveau Devoir</h2>
+            <h2>⚡ Créer un Devoir Interactif (Validation immédiate)</h2>
+            <label for="titre-devoir-manuel">1. Titre du devoir :</label>
+            <input type="text" id="titre-devoir-manuel" placeholder="Ex: Exercice Passé Composé vs Imparfait">
 
-            <label for="titre-devoir">1. Titre du devoir :</label>
-            <input type="text" id="titre-devoir" placeholder="Ex: Devoir de Lundi - Présent et Prépositions">
-
-            <label>2. Type d'exercice :</label>
-            <div class="radio-group">
-                <label class="radio-option">
-                    <input type="radio" name="type-exo" value="select-identique" checked onchange="ajusterFormulaireCreation()">
-                    Menu déroulant (Choix identiques pour tout l'exercice)
-                </label>
-                <label class="radio-option">
-                    <input type="radio" name="type-exo" value="select-variable" onchange="ajusterFormulaireCreation()">
-                    Menu déroulant (Choix différents par phrase)
-                </label>
-                <label class="radio-option">
-                    <input type="radio" name="type-exo" value="input-texte" onchange="ajusterFormulaireCreation()">
-                    Zone de texte (L'élève tape sa réponse)
-                </label>
+            <label>2. Type de quiz :</label>
+            <div style="display:flex; gap:15px; flex-wrap:wrap; margin-top:8px;">
+                <label><input type="radio" name="type-exo-manuel" value="select-identique" checked onchange="ajusterFormulaireManuel()"> Choix identiques</label>
+                <label><input type="radio" name="type-exo-manuel" value="select-variable" onchange="ajusterFormulaireManuel()"> Choix variables par phrase</label>
+                <label><input type="radio" name="type-exo-manuel" value="input-texte" onchange="ajusterFormulaireManuel()"> Saisie texte libre</label>
             </div>
 
-            <div id="box-options-identiques" style="margin-top: 15px;">
-                <label for="options-globales">Options du menu (séparées par une virgule) :</label>
-                <input type="text" id="options-globales" value="in, on, at">
+            <div id="box-options-identiques" style="margin-top:15px;">
+                <label>Options du menu (séparées par une virgule) :</label>
+                <input type="text" id="options-globales" value="à, de, en">
             </div>
 
-            <label for="texte-brut-devoir" style="margin-top: 15px;">3. Collez vos phrases avec le point-virgule :</label>
-            <div id="aide-format" class="code-box">Format attendu :
-The keys are ____ the table.;on
-He is waiting ____ the bus stop.;at</div>
+            <label style="margin-top:15px;">3. Collez vos phrases avec le point-virgule (;) :</label>
+            <textarea id="texte-brut-manuel" rows="8" placeholder="Phrase avec ____;bonne_reponse"></textarea>
 
-            <textarea id="texte-brut-devoir" rows="9" placeholder="Collez vos phrases ici..."></textarea>
-
-            <div style="margin-top: 15px; display: flex; gap: 10px;">
-                <button class="btn" onclick="previsualiserDevoir()">👁️ Prévisualiser</button>
-                <button class="btn btn-success" onclick="enregistrerDevoir()">💾 Sauvegarder ce Devoir</button>
+            <div style="margin-top:15px;">
+                <button type="button" class="btn btn-success" onclick="enregistrerDevoirManuel()">💾 Sauvegarder ce Devoir Interactif</button>
             </div>
-        </div>
-
-        <div class="card" id="card-previsualisation" style="display:none;">
-            <h2>Aperçu du Devoir</h2>
-            <div id="zone-apercu"></div>
         </div>
     </div>
 
-    <!-- ONGLET 3 : BANQUE DE DEVOIRS -->
-    <div id="tab-devoirs" class="tab-pane" style="display: none;">
+    <!-- ONGLET 4 : IMPORT PDF -->
+    <div id="tab-pdf" class="tab-pane" style="display:none;">
+        <div class="card">
+            <h2>📄 Importer un Cours & Exercices depuis un PDF</h2>
+            
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                <div>
+                    <label>URL de votre serveur Render :</label>
+                    <input type="text" id="api-url" value="https://das-plateforme.onrender.com">
+                </div>
+                <div>
+                    <label>Modèle IA pour l'analyse :</label>
+                    <select id="select-ia-model">
+                        <option value="deepseek/deepseek-v4.1-flash:thinking" selected>⚡ DeepSeek 4.1 Flash (Thinking - Recommandé)</option>
+                        <option value="qwen/qwen3-235b-a22b-thinking-2507">🧠 Qwen 3 235B (Thinking)</option>
+                        <option value="gemini-3.8-flash">🚀 Gemini 3.8 Flash (Google)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="margin-top:10px;">
+                <label>Votre Clé API NanoGPT :</label>
+                <input type="password" id="nanogpt-key-input" placeholder="nano-... (Nécessaire si vous utilisez DeepSeek ou Qwen)">
+            </div>
+
+            <label style="margin-top:15px;">Fichier PDF du cours :</label>
+            <input type="file" id="pdf-file-input" accept="application/pdf">
+
+            <div style="margin-top:20px;">
+                <button type="button" class="btn btn-purple" id="btn-analyser-pdf" onclick="analyserPDFAvecIA()">🚀 Lancer l'analyse du cours</button>
+            </div>
+        </div>
+
+        <div class="card" id="card-resultat-ia" style="display:none;">
+            <h2>📖 Aperçu Trilingue & Retouche du Cours Généré</h2>
+            
+            <label>Titre de la leçon :</label>
+            <input type="text" id="ia-titre" style="margin-bottom:15px;">
+
+            <div class="subtabs-lang">
+                <button type="button" class="subtab-lang-btn active" id="subtab-btn-fr" onclick="changerLangueApercu('fr', this)">🇫🇷 Aperçu Français</button>
+                <button type="button" class="subtab-lang-btn" id="subtab-btn-en" onclick="changerLangueApercu('en', this)">🇬🇧 English Preview</button>
+                <button type="button" class="subtab-lang-btn" id="subtab-btn-ko" onclick="changerLangueApercu('ko', this)">🇰🇷 한국어 미리보기</button>
+            </div>
+
+            <div id="zone-apercu-dynamique"></div>
+
+            <div class="box-retouche-ia">
+                <h3 style="margin-top:0; color:#581c87;">🪄 Demander des ajustements à l'IA sur ce cours</h3>
+                <p style="color:#6b21a8; font-size:0.95em; margin-top:4px;">L'IA appliquera vos consignes avec le modèle sélectionné et mettra à jour les 3 langues.</p>
+                <textarea id="instruction-retouche-texte" rows="3" placeholder="Exemples :&#10;- Ajoute 2 questions au quiz théorique sur les exceptions.&#10;- Simplifie les explications en coréen.&#10;- Rajoute un exercice d'application de 5 phrases avec 'en' et 'y'."></textarea>
+                
+                <div style="margin-top:12px; display:flex; justify-content:flex-end;">
+                    <button type="button" class="btn btn-purple" id="btn-appliquer-retouche" onclick="appliquerRetoucheIA()">✨ Appliquer les modifications</button>
+                </div>
+            </div>
+
+            <div style="margin-top:25px; display:flex; justify-content:flex-end; border-top:1px solid #e2e8f0; padding-top:20px;">
+                <button type="button" class="btn btn-success" style="font-size:1.15em; padding:14px 28px;" onclick="sauvegarderDevoirIA()">💾 Enregistrer ce Chapitre validé dans ma Banque</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ONGLET 5 : BANQUE DE DEVOIRS -->
+    <div id="tab-devoirs" class="tab-pane" style="display:none;">
         <div class="card">
             <h2>Banque de Devoirs disponibles</h2>
             <table>
                 <thead>
-                    <tr>
-                        <th>Titre</th>
-                        <th>Type</th>
-                        <th>Nb phrases</th>
-                        <th>Actions</th>
-                    </tr>
+                    <tr><th>Titre</th><th>Type</th><th>Contenu</th><th>Actions</th></tr>
                 </thead>
-                <tbody id="table-devoirs-corps">
-                    <tr><td colspan="4" style="text-align:center; color:#888;">Chargement...</td></tr>
-                </tbody>
+                <tbody id="table-devoirs-corps"><tr><td colspan="4">Chargement...</td></tr></tbody>
             </table>
         </div>
     </div>
 </div>
 
-<!-- MODAL GÉNÉRAL -->
+<!-- 1. MODALE D'ASSIGNATION -->
+<div class="modal" id="modal-assignation">
+    <div class="modal-content" style="max-width: 550px;">
+        <h2 style="margin-top:0; color:var(--primary);">➕ Assigner un devoir</h2>
+        <p style="margin:0 0 10px 0; color:#64748b;">Devoir sélectionné : <strong id="assign-titre-devoir" style="color:var(--accent);">-</strong></p>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+            <input type="text" id="recherche-assign-eleve" placeholder="Filtrer les élèves..." oninput="filtrerCochesAssignation()" style="padding:8px 12px; font-size:0.9em; flex:1; margin-right:10px;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="basculerToutesLesCoches()">☑️ Tout cocher / Décocher</button>
+        </div>
+
+        <div class="liste-coches-eleves" id="conteneur-coches-eleves"></div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+            <button type="button" class="btn btn-secondary" onclick="fermerModalAssignation()">Annuler</button>
+            <button type="button" class="btn btn-success" id="btn-valider-assignation" onclick="confirmerAssignationGroupee()">✅ Assigner aux élèves cochés</button>
+        </div>
+    </div>
+</div>
+
+<!-- 2. MODALE CONSULTATION BANQUE -->
+<div class="modal" id="modal-apercu-cours">
+    <div class="modal-content">
+        <h2 id="modal-apercu-titre" style="margin-top:0; color:var(--primary);">-</h2>
+        <div class="subtabs-lang">
+            <button type="button" class="subtab-lang-btn active" id="btn-modal-fr" onclick="changerLangueModalApercu('fr')">🇫🇷 Français</button>
+            <button type="button" class="subtab-lang-btn" id="btn-modal-en" onclick="changerLangueModalApercu('en')">🇬🇧 English</button>
+            <button type="button" class="subtab-lang-btn" id="btn-modal-ko" onclick="changerLangueModalApercu('ko')">🇰🇷 한국어</button>
+        </div>
+        <div id="modal-apercu-contenu"></div>
+        <div style="text-align:right; margin-top:20px;">
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('modal-apercu-cours').classList.remove('ouverte')">Fermer</button>
+        </div>
+    </div>
+</div>
+
+<!-- 3. MODALE RETOURS EMMA PROF -->
 <div class="modal" id="modal-fautes">
     <div class="modal-content">
         <h2 id="modal-titre" style="margin-top:0; color:var(--primary);">-</h2>
         <div id="modal-contenu"></div>
         <div style="text-align:right; margin-top:20px;">
-            <button class="btn" onclick="fermerModal()">Fermer</button>
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('modal-fautes').classList.remove('ouverte')">Fermer</button>
         </div>
     </div>
 </div>
 
-<script>
-    // --- 1. INITIALISATION FIREBASE ---
-    let db = null;
-    try {
-        const firebaseConfig = {
-            apiKey: "AIzaSyBF72uEilOlNUnRB4_BqREpXCj6NvF4Mac",
-            authDomain: "exoanglais-6dd43.firebaseapp.com",
-            projectId: "exoanglais-6dd43",
-            storageBucket: "exoanglais-6dd43.firebasestorage.app",
-            messagingSenderId: "656075154329",
-            appId: "1:656075154329:web:cfe7ccb130ae55da02a908",
-            measurementId: "G-BWY78NT061"
-        };
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        db = firebase.firestore();
-    } catch(e) {
-        console.error("Erreur init Firebase :", e);
-    }
-
-    let listeEleves = [];
-    let listeDevoirs = [];
-    let assignationsMap = {};
-    let devoirsMap = {};
-    let elevesMap = {};
-
-    function basculerOnglet(tabId, btnElement) {
-        try {
-            document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            
-            const cible = document.getElementById(tabId);
-            if (cible) cible.style.display = 'block';
-
-            if (btnElement) {
-                btnElement.classList.add('active');
-            } else {
-                const boutonAuto = document.getElementById('btn-' + tabId);
-                if (boutonAuto) boutonAuto.classList.add('active');
-            }
-        } catch(err) {
-            console.error("Erreur basculerOnglet :", err);
-        }
-    }
-
-    function ajusterFormulaireCreation() {
-        const typeEl = document.querySelector('input[name="type-exo"]:checked');
-        if (!typeEl) return;
-        const type = typeEl.value;
-        const boxIdentiques = document.getElementById('box-options-identiques');
-        const aide = document.getElementById('aide-format');
-
-        if (type === 'select-identique') {
-            boxIdentiques.style.display = 'block';
-            aide.textContent = `Format attendu :\nThe keys are ____ the table.;on\nHe is waiting ____ the bus stop.;at`;
-        } else if (type === 'select-variable') {
-            boxIdentiques.style.display = 'none';
-            aide.textContent = `Format attendu (Phrase;choix1;choix2;bonne_réponse) :\nThe baby ____ (cry).;cries;is crying;is crying\nWater ____ (boil) at 100 degrees.;boils;is boiling;boils`;
-        } else {
-            boxIdentiques.style.display = 'none';
-            aide.textContent = `Format attendu (Phrase;bonne_réponse) :\nListen! The baby ____ (cry).;is crying\nI ____ (not/like) vegetables.;don't like|do not like`;
-        }
-    }
-
-    function parserTexteEnPhrases() {
-        const typeEl = document.querySelector('input[name="type-exo"]:checked');
-        const type = typeEl ? typeEl.value : 'select-identique';
-        const texte = document.getElementById('texte-brut-devoir').value.trim();
-        const lignes = texte.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-        const phrases = [];
-
-        lignes.forEach(ligne => {
-            const parties = ligne.split(';').map(p => p.trim());
-            if (parties.length < 2) return;
-
-            const q = parties[0];
-
-            if (type === 'select-identique') {
-                const optionsGlobales = document.getElementById('options-globales').value.split(',').map(o => o.trim());
-                phrases.push({ q: q, type: 'select', options: optionsGlobales, a: [parties[1]] });
-            } else if (type === 'select-variable') {
-                const bonneReponse = parties[parties.length - 1];
-                const options = parties.slice(1, parties.length - 1);
-                if (!options.includes(bonneReponse)) options.push(bonneReponse);
-                phrases.push({ q: q, type: 'select', options: options, a: [bonneReponse] });
-            } else {
-                const variantes = parties[1].split('|').map(v => v.trim());
-                phrases.push({ q: q, type: 'text', a: variantes });
-            }
-        });
-
-        return phrases;
-    }
-
-    function previsualiserDevoir() {
-        const phrases = parserTexteEnPhrases();
-        const cardPrev = document.getElementById('card-previsualisation');
-        const zone = document.getElementById('zone-apercu');
-
-        if (phrases.length === 0) {
-            alert("Aucune phrase valide. Vérifiez le format avec les points-virgules.");
-            return;
-        }
-
-        zone.innerHTML = "";
-        phrases.forEach((p, idx) => {
-            const div = document.createElement('div');
-            div.style.marginBottom = "10px";
-            const parts = p.q.includes('____') ? p.q.split('____') : p.q.split('___');
-
-            if (p.type === 'select') {
-                let optionsHtml = `<option value="">---</option>` + p.options.map(o => `<option>${o}</option>`).join('');
-                div.innerHTML = `${idx + 1}. ${parts[0]} <select style="width:auto; padding:4px 8px;">${optionsHtml}</select> ${parts[1] || ""} <span style="color:#888; font-size:0.85em;">(Attendu : ${p.a.join('/')})</span>`;
-            } else {
-                div.innerHTML = `${idx + 1}. ${parts[0]} <input type="text" style="width:130px; padding:4px 8px;" placeholder="..."> ${parts[1] || ""} <span style="color:#888; font-size:0.85em;">(Attendu : ${p.a.join('/')})</span>`;
-            }
-            zone.appendChild(div);
-        });
-
-        cardPrev.style.display = 'block';
-        cardPrev.scrollIntoView({ behavior: 'smooth' });
-    }
-
-    async function enregistrerDevoir() {
-        if (!db) return alert("Firebase non connecté.");
-        const titre = document.getElementById('titre-devoir').value.trim();
-        const phrases = parserTexteEnPhrases();
-
-        if (!titre) return alert("Veuillez indiquer un titre.");
-        if (phrases.length === 0) return alert("Veuillez coller au moins une phrase.");
-
-        try {
-            await db.collection("devoirs").add({
-                titre: titre,
-                phrases: phrases,
-                dateCreation: firebase.firestore.FieldValue.serverTimestamp()
-            });
-
-            alert("✅ Devoir enregistré !");
-            document.getElementById('titre-devoir').value = "";
-            document.getElementById('texte-brut-devoir').value = "";
-            document.getElementById('card-previsualisation').style.display = "none";
-            basculerOnglet('tab-devoirs');
-        } catch(e) {
-            alert("Erreur lors de l'enregistrement : " + e.message);
-        }
-    }
-
-    async function creerEleve() {
-        if (!db) return alert("Firebase non connecté.");
-        const code = document.getElementById('nouvel-eleve-nom').value.trim();
-        if (!code) return alert("Indiquez le code élève (ex: Lucas01).");
-
-        try {
-            await db.collection("eleves").add({
-                code: code,
-                dateCreation: firebase.firestore.FieldValue.serverTimestamp()
-            });
-
-            document.getElementById('nouvel-eleve-nom').value = "";
-            alert(`✅ Profil ${code} enregistré !`);
-        } catch(e) {
-            alert("Erreur création élève : " + e.message);
-        }
-    }
-
-    async function supprimerEleveParId(id) {
-        if (!db) return;
-        const e = elevesMap[id];
-        const nom = e ? e.code : "cet élève";
-        if (confirm(`Supprimer l'élève ${nom} ?`)) {
-            await db.collection("eleves").doc(id).delete();
-        }
-    }
-
-    // SUPPRESSION DEVOIR EN CASCADE (Supprime aussi chez les élèves)
-    async function supprimerDevoirParId(id) {
-        if (!db) return;
-        const d = devoirsMap[id];
-        const nom = d ? d.titre : "ce devoir";
-        
-        if (confirm(`Supprimer définitivement "${nom}" de la banque ?\n\n⚠️ Cela le retirera aussi automatiquement de tous les élèves à qui il a été assigné.`)) {
-            try {
-                // 1. Supprimer le devoir de la banque
-                await db.collection("devoirs").doc(id).delete();
-
-                // 2. Supprimer toutes les assignations associées chez les élèves
-                const snapshot = await db.collection("assignations").where("devoirId", "==", id).get();
-                const batch = db.batch();
-                snapshot.forEach(doc => {
-                    batch.delete(doc.ref);
-                });
-                await batch.commit();
-
-                alert(`✅ Le devoir "${nom}" a bien été supprimé partout.`);
-            } catch(e) {
-                alert("Erreur lors de la suppression : " + e.message);
-            }
-        }
-    }
-
-    // RETIRER UN DEVOIR ASSIGNÉ À UN ÉLÈVE SPÉCIFIQUE
-    async function supprimerAssignationParId(id) {
-        if (!db) return;
-        const a = assignationsMap[id];
-        const desc = a ? `le devoir "${a.devoirTitre}" de l'élève ${a.eleveCode}` : "ce devoir";
-
-        if (confirm(`Voulez-vous retirer ${desc} ?\n\nIl disparaîtra immédiatement de la page de l'élève.`)) {
-            try {
-                await db.collection("assignations").doc(id).delete();
-            } catch(e) {
-                alert("Erreur : " + e.message);
-            }
-        }
-    }
-
-    async function assignerDevoirParId(devoirId) {
-        if (!db) return;
-        const devoir = devoirsMap[devoirId];
-        if (!devoir) return alert("Devoir introuvable.");
-        if (listeEleves.length === 0) return alert("Créez d'abord au moins un élève.");
-
-        const optionsTexte = listeEleves.map((e, idx) => `${idx + 1}. ${e.code}`).join('\n');
-        const choix = prompt(`À quel élève assigner "${devoir.titre}" ?\n\n${optionsTexte}\n\nTapez le numéro :`);
-        const num = parseInt(choix);
-
-        if (num >= 1 && num <= listeEleves.length) {
-            const eleveChoisi = listeEleves[num - 1];
-
-            try {
-                await db.collection("assignations").add({
-                    eleveId: eleveChoisi.id,
-                    eleveCode: eleveChoisi.code,
-                    devoirId: devoir.id,
-                    devoirTitre: devoir.titre,
-                    phrases: devoir.phrases || [],
-                    statut: "non_commence",
-                    score: 0,
-                    totalQuestions: devoir.phrases ? devoir.phrases.length : 0,
-                    totalErreurs: 0,
-                    fautesDetails: [],
-                    reponsesValidees: {},
-                    dateAssignation: firebase.firestore.FieldValue.serverTimestamp()
-                });
-
-                alert(`✅ Devoir assigné à ${eleveChoisi.code} !`);
-                basculerOnglet('tab-eleves');
-            } catch(err) {
-                alert("Erreur lors de l'assignation : " + err.message);
-            }
-        }
-    }
-
-    // --- 3. ÉCOUTE TEMPS RÉEL DES DONNÉES ---
-    function ecouterDonnees() {
-        if (!db) return;
-
-        // 1. Liste des élèves
-        db.collection("eleves").onSnapshot(snapshot => {
-            listeEleves = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            listeEleves.sort((a, b) => (b.dateCreation?.seconds || 0) - (a.dateCreation?.seconds || 0));
-
-            elevesMap = {};
-            listeEleves.forEach(e => { elevesMap[e.id] = e; });
-
-            const tbody = document.getElementById('table-eleves-corps');
-            tbody.innerHTML = "";
-
-            if (listeEleves.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#888;">Aucun élève enregistré.</td></tr>`;
-                return;
-            }
-
-            listeEleves.forEach(e => {
-                const tr = document.createElement('tr');
-                const dateStr = e.dateCreation ? e.dateCreation.toDate().toLocaleDateString('fr-FR') : 'Aujourd\'hui';
-                tr.innerHTML = `
-                    <td><strong style="color:#2b6cb0; font-size:1.1em;">${e.code || "Sans nom"}</strong></td>
-                    <td>${dateStr}</td>
-                    <td>
-                        <button class="btn btn-danger btn-sm" onclick="supprimerEleveParId('${e.id}')">🗑️ Supprimer</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }, err => {
-            console.error("Erreur Firestore élèves :", err);
-            document.getElementById('table-eleves-corps').innerHTML = `<tr><td colspan="3" style="color:red; text-align:center;">Erreur : ${err.message}</td></tr>`;
-        });
-
-        // 2. Liste des devoirs (Banque)
-        db.collection("devoirs").onSnapshot(snapshot => {
-            listeDevoirs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            listeDevoirs.sort((a, b) => (b.dateCreation?.seconds || 0) - (a.dateCreation?.seconds || 0));
-
-            devoirsMap = {};
-            listeDevoirs.forEach(d => { devoirsMap[d.id] = d; });
-
-            const tbody = document.getElementById('table-devoirs-corps');
-            tbody.innerHTML = "";
-
-            if (listeDevoirs.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#888;">Aucun devoir créé pour le moment.</td></tr>`;
-                return;
-            }
-
-            listeDevoirs.forEach(d => {
-                const tr = document.createElement('tr');
-                const tabPhrases = Array.isArray(d.phrases) ? d.phrases : [];
-                const nbPhrases = tabPhrases.length;
-                const typeTexte = (nbPhrases > 0 && tabPhrases[0].type === 'select') ? 'Menu déroulant' : 'Saisie texte';
-
-                tr.innerHTML = `
-                    <td><strong>${d.titre || "Sans titre"}</strong></td>
-                    <td>${typeTexte}</td>
-                    <td>${nbPhrases} phrases</td>
-                    <td style="display:flex; gap:6px; flex-wrap:wrap;">
-                        <button class="btn btn-sm" onclick="consulterDevoirParId('${d.id}')">👁️ Voir les phrases</button>
-                        <button class="btn btn-sm btn-success" onclick="assignerDevoirParId('${d.id}')">➕ Assigner</button>
-                        <button class="btn btn-sm btn-danger" onclick="supprimerDevoirParId('${d.id}')" title="Supprimer de la banque et chez les élèves">🗑️</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }, err => {
-            console.error("Erreur Firestore devoirs :", err);
-            document.getElementById('table-devoirs-corps').innerHTML = `<tr><td colspan="4" style="color:red; text-align:center;">Erreur : ${err.message}</td></tr>`;
-        });
-
-        // 3. Suivi des devoirs assignés
-        db.collection("assignations").onSnapshot(snapshot => {
-            const assignations = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            assignations.sort((a, b) => (b.dateAssignation?.seconds || 0) - (a.dateAssignation?.seconds || 0));
-
-            assignationsMap = {};
-            assignations.forEach(a => { assignationsMap[a.id] = a; });
-
-            const tbody = document.getElementById('table-assignations-corps');
-            tbody.innerHTML = "";
-
-            if (assignations.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#888;">Aucun devoir assigné.</td></tr>`;
-                return;
-            }
-
-            assignations.forEach(a => {
-                const tr = document.createElement('tr');
-
-                let badgeStatut = `<span class="badge badge-nonfait">Non commencé</span>`;
-                if (a.statut === 'en_cours') badgeStatut = `<span class="badge badge-cours">En cours</span>`;
-                if (a.statut === 'termine') badgeStatut = `<span class="badge badge-termine">Terminé</span>`;
-
-                const totalQ = a.totalQuestions || (Array.isArray(a.phrases) ? a.phrases.length : 0);
-
-                tr.innerHTML = `
-                    <td><strong>${a.eleveCode || "Inconnu"}</strong></td>
-                    <td>${a.devoirTitre || "Sans titre"}</td>
-                    <td>${badgeStatut}</td>
-                    <td><strong>${a.score || 0} / ${totalQ}</strong></td>
-                    <td><strong style="color:var(--danger);">${a.totalErreurs || 0} faute(s)</strong></td>
-                    <td style="display:flex; gap:6px;">
-                        <button class="btn btn-sm" onclick="voirFautesParId('${a.id}')">🔍 Voir les erreurs</button>
-                        <button class="btn btn-sm btn-danger" onclick="supprimerAssignationParId('${a.id}')" title="Retirer ce devoir à cet élève">🗑️</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }, err => {
-            console.error("Erreur Firestore assignations :", err);
-            document.getElementById('table-assignations-corps').innerHTML = `<tr><td colspan="6" style="color:red; text-align:center;">Erreur : ${err.message}</td></tr>`;
-        });
-    }
-
-    // MODAL : VOIR LES FAUTES
-    function voirFautesParId(id) {
-        const assignation = assignationsMap[id];
-        if (!assignation) return alert("Données introuvables.");
-
-        const modal = document.getElementById('modal-fautes');
-        const titre = document.getElementById('modal-titre');
-        const contenu = document.getElementById('modal-contenu');
-
-        titre.textContent = `Erreurs de ${assignation.eleveCode} sur "${assignation.devoirTitre}"`;
-
-        const fautes = Array.isArray(assignation.fautesDetails) ? assignation.fautesDetails : [];
-
-        if (fautes.length === 0) {
-            contenu.innerHTML = `<p style="color:var(--success); font-weight:bold; padding:15px; text-align:center;">🎉 Aucune faute enregistrée pour l'instant !</p>`;
-        } else {
-            let html = `<table>
-                <thead>
-                    <tr>
-                        <th>Phrase</th>
-                        <th>Réponse de l'élève</th>
-                        <th>Bonne réponse</th>
-                    </tr>
-                </thead>
-                <tbody>`;
-
-            fautes.forEach(f => {
-                html += `
-                    <tr>
-                        <td>${f.phrase || "-"}</td>
-                        <td style="color:var(--danger); font-weight:bold; text-decoration:line-through;">${f.reponseEleve || "(vide)"}</td>
-                        <td style="color:var(--success); font-weight:bold;">${f.attendu || "-"}</td>
-                    </tr>
-                `;
-            });
-
-            html += `</tbody></table>`;
-            contenu.innerHTML = html;
-        }
-
-        modal.style.display = "flex";
-    }
-
-    // MODAL : VOIR LES QUESTIONS D'UN DEVOIR
-    function consulterDevoirParId(id) {
-        const devoir = devoirsMap[id];
-        if (!devoir) return alert("Devoir introuvable.");
-
-        const modal = document.getElementById('modal-fautes');
-        const titre = document.getElementById('modal-titre');
-        const contenu = document.getElementById('modal-contenu');
-
-        titre.textContent = `Contenu du devoir : "${devoir.titre}"`;
-
-        const phrases = Array.isArray(devoir.phrases) ? devoir.phrases : [];
-        if (phrases.length === 0) {
-            contenu.innerHTML = `<p style="color:#888;">Ce devoir ne contient aucune phrase.</p>`;
-        } else {
-            let html = `<ol style="padding-left:20px; line-height:1.8;">`;
-            phrases.forEach(p => {
-                const rep = Array.isArray(p.a) ? p.a.join(' / ') : (p.a || "");
-                html += `<li>${p.q} <strong style="color:var(--success); margin-left:8px;">[Réponse : ${rep}]</strong></li>`;
-            });
-            html += `</ol>`;
-            contenu.innerHTML = html;
-        }
-
-        modal.style.display = "flex";
-    }
-
-    function fermerModal() {
-        document.getElementById('modal-fautes').style.display = "none";
-    }
-
-    // Lancement de l'écoute des données
-    ecouterDonnees();
-</script>
 </body>
 </html>
