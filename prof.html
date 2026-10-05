@@ -102,6 +102,9 @@
         .quiz-item-apercu { background: white; border: 1px solid #cbd5e0; border-radius: 8px; padding: 14px; margin-bottom: 12px; }
 
         .box-retouche-ia { background: #faf5ff; border: 2px solid #e9d5ff; border-radius: 12px; padding: 20px; margin-top: 25px; }
+
+        /* ÉDITEUR MANUEL */
+        .edit-box-item { background: white; border: 1px solid #cbd5e0; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
     </style>
 
     <script>
@@ -160,8 +163,10 @@
         let assignationsMap = {};
         let eleveSelectionne = null;
         let donneesIAPret = null;
+        let coursEnEditionId = null; // Si on modifie un cours déjà existant
         let coursApercuModal = null;
         let langueApercuActive = 'fr';
+        let modeEditionManuelActif = false;
 
         let devoirAAssigner = null;
         let pageActuelleEleves = 1;
@@ -645,11 +650,14 @@
                 if (data.error) throw new Error(data.error);
 
                 donneesIAPret = data;
+                coursEnEditionId = null; // Nouveau cours
                 document.getElementById('ia-titre').value = data.titre || "Chapitre de cours";
                 
+                modeEditionManuelActif = false;
+                mettreAJourBoutonModeEdition();
                 changerLangueApercu('fr', document.getElementById('subtab-btn-fr'));
                 document.getElementById('card-resultat-ia').style.display = "block";
-                alert(`✅ Analyse réussie avec ${modelChoisi} !`);
+                alert(`✅ Analyse réussie avec ${modelChoisi} ! Vous pouvez inspecter ou éditer le cours ci-dessous.`);
 
             } catch(e) {
                 alert("Erreur lors de l'analyse : " + e.message);
@@ -659,6 +667,7 @@
             }
         };
 
+        // RETOUCHE PAR L'IA
         window.appliquerRetoucheIA = async function() {
             if (!donneesIAPret) return alert("Aucun cours n'est actuellement en cours d'analyse.");
 
@@ -705,6 +714,25 @@
             }
         };
 
+        // BASCULE MODE ÉDITION MANUELLE VS APERÇU
+        window.basculerModeEditionManuel = function() {
+            modeEditionManuelActif = !modeEditionManuelActif;
+            mettreAJourBoutonModeEdition();
+            rendreApercuTrilingue(langueApercuActive);
+        };
+
+        function mettreAJourBoutonModeEdition() {
+            const btn = document.getElementById('btn-toggle-edit-mode');
+            if (!btn) return;
+            if (modeEditionManuelActif) {
+                btn.textContent = "👁️ Passer en Mode Aperçu";
+                btn.className = "btn btn-secondary";
+            } else {
+                btn.textContent = "✏️ Mode Édition manuelle";
+                btn.className = "btn btn-purple";
+            }
+        }
+
         window.changerLangueApercu = function(lang, btn) {
             langueApercuActive = lang;
             document.querySelectorAll('.subtabs-lang .subtab-lang-btn').forEach(b => b.classList.remove('active'));
@@ -713,12 +741,17 @@
         };
 
         function rendreApercuTrilingue(lang) {
-            document.getElementById('zone-apercu-dynamique').innerHTML = construireHtmlContenuCours(donneesIAPret, lang);
+            const conteneur = document.getElementById('zone-apercu-dynamique');
+            if (modeEditionManuelActif) {
+                conteneur.innerHTML = construireFormulaireEditionManuel(donneesIAPret, lang);
+            } else {
+                conteneur.innerHTML = construireHtmlContenuCours(donneesIAPret, lang);
+            }
         }
 
-        // =========================================================================
-        // NOUVEL ORDRE PÉDAGOGIQUE STRICT : COURS ➡️ MÉMO POINTS CLÉS ➡️ QUIZ ➡️ EXOS
-        // =========================================================================
+        // ==========================================
+        // 1. APERÇU EN LECTURE (ORDRE PÉDAGOGIQUE)
+        // ==========================================
         function construireHtmlContenuCours(data, lang) {
             if (!data) return "<p>Aucune donnée disponible.</p>";
 
@@ -737,7 +770,7 @@
                 `;
             }).join('') || "<p style='color:#64748b;'>Aucune fiche de cours.</p>";
 
-            // 2. Points Importants de la Leçon (Synthèse)
+            // 2. Points Importants de la Leçon
             const points = (data.points_importants && data.points_importants[lang]) ? data.points_importants[lang] : (data.points_importants ? (data.points_importants.fr || []) : []);
             const htmlPoints = points.map(pt => `<li>${pt}</li>`).join('');
 
@@ -785,13 +818,11 @@
             `).join('') || "<p style='color:#64748b;'>Aucun bloc d'exercices.</p>";
 
             return `
-                <!-- 1. EN PREMIER : LE COURS THÉORIQUE -->
                 <div class="apercu-section" style="border-left: 6px solid #8b5cf6;">
                     <h3>📖 1. Fiches de Cours Théorique</h3>
                     ${htmlCours}
                 </div>
 
-                <!-- 2. EN DEUXIÈME : LES POINTS CLÉS (SYNTHÈSE) -->
                 <div class="apercu-section" style="border-left: 6px solid #3b82f6;">
                     <h3>💡 2. Points Importants de la Leçon (Synthèse)</h3>
                     <ul style="margin:6px 0 0 20px; line-height:1.8;">
@@ -799,13 +830,11 @@
                     </ul>
                 </div>
 
-                <!-- 3. EN TROISIÈME : LE QUIZ THÉORIQUE -->
                 <div class="apercu-section" style="border-left: 6px solid #10b981;">
                     <h3>🧠 3. Quiz Théorique Intermédiaire (${questions.length} questions)</h3>
                     ${htmlQuiz}
                 </div>
 
-                <!-- 4. EN DERNIER : LES EXERCICES D'APPLICATION -->
                 <div class="apercu-section" style="border-left: 6px solid #f59e0b;">
                     <h3>✍️ 4. Blocs d'Exercices Pratiques (${exos.length} blocs)</h3>
                     ${htmlExos}
@@ -813,20 +842,160 @@
             `;
         }
 
+        // ==========================================
+        // 2. ÉDITEUR MANUEL COMPLET (CHAMPS MODIFIABLES)
+        // ==========================================
+        function construireFormulaireEditionManuel(data, lang) {
+            if (!data) return "<p>Aucune donnée.</p>";
+
+            // 1. Cours Théorique
+            const slides = (data.bloc_cours && data.bloc_cours.slides) ? data.bloc_cours.slides : [];
+            const htmlCours = slides.map((s, idx) => {
+                const champContenu = (lang === 'ko') ? 'contenu_ko' : (lang === 'en' ? 'contenu_en' : 'contenu_fr');
+                const valTexte = s[champContenu] || "";
+                return `
+                    <div class="edit-box-item">
+                        <label>Titre Fiche ${idx + 1} :</label>
+                        <input type="text" value="${s.titre || ''}" oninput="donneesIAPret.bloc_cours.slides[${idx}].titre = this.value">
+                        <label style="margin-top:8px;">Texte d'explication (${lang.toUpperCase()}) :</label>
+                        <textarea rows="4" oninput="donneesIAPret.bloc_cours.slides[${idx}]['${champContenu}'] = this.value">${valTexte}</textarea>
+                    </div>
+                `;
+            }).join('');
+
+            // 2. Points Clés
+            const points = (data.points_importants && data.points_importants[lang]) ? data.points_importants[lang] : [];
+            const textePoints = points.join('\n');
+
+            // 3. Quiz Théorique
+            const questions = (data.quiz_theorique && data.quiz_theorique.questions) ? data.quiz_theorique.questions : [];
+            const htmlQuiz = questions.map((q, qIdx) => {
+                const qTxt = (q.question && q.question[lang]) ? q.question[lang] : "";
+                const expTxt = (q.explication && q.explication[lang]) ? q.explication[lang] : "";
+                const opts = (q.options && q.options[lang]) ? q.options[lang] : [];
+
+                const optsInputs = opts.map((opt, oIdx) => `
+                    <div style="display:flex; align-items:center; gap:8px; margin-top:6px;">
+                        <input type="radio" name="bonnerep_${qIdx}" value="${oIdx}" ${oIdx === q.reponse_correcte_index ? 'checked' : ''} onchange="donneesIAPret.quiz_theorique.questions[${qIdx}].reponse_correcte_index = ${oIdx}">
+                        <input type="text" value="${opt}" oninput="donneesIAPret.quiz_theorique.questions[${qIdx}].options['${lang}'][${oIdx}] = this.value" placeholder="Option ${String.fromCharCode(65 + oIdx)}">
+                    </div>
+                `).join('');
+
+                return `
+                    <div class="edit-box-item">
+                        <label>Question ${qIdx + 1} (${lang.toUpperCase()}) :</label>
+                        <input type="text" value="${qTxt}" oninput="donneesIAPret.quiz_theorique.questions[${qIdx}].question['${lang}'] = this.value">
+                        <label style="margin-top:8px;">Options de réponse (Cochez la bonne) :</label>
+                        ${optsInputs}
+                        <label style="margin-top:8px;">Explication (${lang.toUpperCase()}) :</label>
+                        <textarea rows="2" oninput="donneesIAPret.quiz_theorique.questions[${qIdx}].explication['${lang}'] = this.value">${expTxt}</textarea>
+                    </div>
+                `;
+            }).join('');
+
+            // 4. Exercices
+            const exos = data.blocs_exercices || [];
+            const htmlExos = exos.map((b, bIdx) => {
+                const phrasesTexte = (b.questions || []).map(q => q.q).join('\n');
+                return `
+                    <div class="edit-box-item">
+                        <label>Titre de l'exercice :</label>
+                        <input type="text" value="${b.titre || ''}" oninput="donneesIAPret.blocs_exercices[${bIdx}].titre = this.value">
+                        <label style="margin-top:8px;">Consigne :</label>
+                        <input type="text" value="${b.consigne || ''}" oninput="donneesIAPret.blocs_exercices[${bIdx}].consigne = this.value">
+                        <label style="margin-top:8px;">Phrases à trous avec "____" (une par ligne) :</label>
+                        <textarea rows="6" oninput="donneesIAPret.blocs_exercices[${bIdx}].questions = this.value.split('\\n').filter(l=>l.trim().length>0).map(l=>({q: l.trim()}))">${phrasesTexte}</textarea>
+                    </div>
+                `;
+            }).join('');
+
+            return `
+                <div style="background:#eff6ff; border:2px solid #93c5fd; padding:12px 18px; border-radius:8px; margin-bottom:15px; font-weight:600; color:#1e40af;">
+                    ✏️ Mode Édition actif (${lang.toUpperCase()}) : modifiez directement les textes au clavier.
+                </div>
+
+                <div class="apercu-section" style="border-left: 6px solid #8b5cf6;">
+                    <h3>📖 1. Fiches de Cours Théorique</h3>
+                    ${htmlCours}
+                </div>
+
+                <div class="apercu-section" style="border-left: 6px solid #3b82f6;">
+                    <h3>💡 2. Points Importants de la Leçon (Une puce par ligne)</h3>
+                    <textarea rows="5" oninput="donneesIAPret.points_importants['${lang}'] = this.value.split('\\n').filter(l=>l.trim().length>0)">${textePoints}</textarea>
+                </div>
+
+                <div class="apercu-section" style="border-left: 6px solid #10b981;">
+                    <h3>🧠 3. Quiz Théorique Intermédiaire</h3>
+                    ${htmlQuiz}
+                </div>
+
+                <div class="apercu-section" style="border-left: 6px solid #f59e0b;">
+                    <h3>✍️ 4. Blocs d'Exercices Pratiques</h3>
+                    ${htmlExos}
+                </div>
+            `;
+        }
+
+        // ENREGISTREMENT OU MISE À JOUR DU COURS DANS FIRESTORE
         window.sauvegarderDevoirIA = async function() {
             if (!donneesIAPret) return;
-            await db.collection("devoirs").add({
-                titre: document.getElementById('ia-titre').value.trim() || donneesIAPret.titre,
+
+            const titreFinal = document.getElementById('ia-titre').value.trim() || donneesIAPret.titre;
+
+            const objetSauvegarde = {
+                titre: titreFinal,
                 typeDevoir: "chapitre_cours",
                 points_importants: donneesIAPret.points_importants || null,
                 quiz_theorique: donneesIAPret.quiz_theorique || null,
                 bloc_cours: donneesIAPret.bloc_cours || null,
                 blocs_exercices: donneesIAPret.blocs_exercices || [],
                 dateCreation: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            alert("✅ Chapitre complet enregistré dans la banque !");
+            };
+
+            if (coursEnEditionId) {
+                // Mise à jour d'un cours existant
+                await db.collection("devoirs").doc(coursEnEditionId).update(objetSauvegarde);
+
+                // Mettre à jour également les assignations existantes
+                const snap = await db.collection("assignations").where("devoirId", "==", coursEnEditionId).get();
+                const batch = db.batch();
+                snap.forEach(doc => {
+                    batch.update(doc.ref, {
+                        devoirTitre: titreFinal,
+                        points_importants: objetSauvegarde.points_importants,
+                        quiz_theorique: objetSauvegarde.quiz_theorique,
+                        bloc_cours: objetSauvegarde.bloc_cours,
+                        blocs_exercices: objetSauvegarde.blocs_exercices
+                    });
+                });
+                await batch.commit();
+
+                alert("✅ Cours existant mis à jour dans la banque et chez les élèves !");
+            } else {
+                // Nouveau cours
+                await db.collection("devoirs").add(objetSauvegarde);
+                alert("✅ Chapitre complet enregistré dans la banque !");
+            }
+
             document.getElementById('card-resultat-ia').style.display = "none";
             basculerOnglet('tab-devoirs', document.getElementById('btn-tab-devoirs'));
+        };
+
+        // OUVRIR UN COURS EXISTANT DEPUIS LA BANQUE POUR L'ÉDITER
+        window.editerCoursDepuisBanque = function(devoirId) {
+            const d = devoirsMap[devoirId];
+            if (!d) return;
+
+            coursEnEditionId = devoirId;
+            donneesIAPret = JSON.parse(JSON.stringify(d)); // Copie profonde
+            document.getElementById('ia-titre').value = d.titre || "";
+
+            modeEditionManuelActif = true;
+            mettreAJourBoutonModeEdition();
+
+            basculerOnglet('tab-pdf', document.getElementById('btn-tab-pdf'));
+            changerLangueApercu('fr', document.getElementById('subtab-btn-fr'));
+            document.getElementById('card-resultat-ia').style.display = "block";
         };
 
         window.ouvrirApercuCoursDepuisBanque = function(devoirId) {
@@ -860,7 +1029,7 @@
                 html += `<div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:15px; margin-bottom:15px;">
                     <strong style="color:var(--primary);">Q${idx+1} : ${q}</strong><br>`;
                 if (r) {
-                    html += `👀 <strong>Phrase élève</strong> : "${r.phrase_eleve}"<br>
+                    html += `👀 <strong>Ta phrase</strong> : "${r.phrase_eleve}"<br>
                              💬 <strong>Emma</strong> : ${r.reponse_amicale}<br>`;
                     if (r.traduction_reponse) html += `🌐 <em>Traduction Emma</em> : ${r.traduction_reponse}<br>`;
                     html += `✅ <strong>Ce qui est bien</strong> : ${r.ce_qui_est_bien}<br>
@@ -903,28 +1072,39 @@
                     const tr = document.createElement('tr');
                     let badge = "";
                     let info = "";
-                    let btnApercu = "";
+                    let boutonsHtml = "";
 
                     if (d.typeDevoir === "emma") {
                         badge = `<span class="badge-emma">🤖 Emma IA</span>`;
                         info = `${(d.questions || []).length} questions`;
+                        boutonsHtml = `
+                            <button type="button" class="btn btn-sm btn-success" onclick="ouvrirModalAssignation('${d.id}')">➕ Assigner</button>
+                            <button type="button" class="btn btn-sm btn-danger" onclick="supprimerDevoir('${d.id}')">🗑️</button>
+                        `;
                     } else if (d.typeDevoir === "interactif") {
                         badge = `<span class="badge-interactif">⚡ Interactif</span>`;
                         info = `${(d.phrases || []).length} phrases`;
+                        boutonsHtml = `
+                            <button type="button" class="btn btn-sm btn-success" onclick="ouvrirModalAssignation('${d.id}')">➕ Assigner</button>
+                            <button type="button" class="btn btn-sm btn-danger" onclick="supprimerDevoir('${d.id}')">🗑️</button>
+                        `;
                     } else {
                         badge = `<span class="badge-chapitre">📖 Cours + Quiz</span>`;
                         info = `Fiches + Quiz + ${(d.blocs_exercices || []).length} blocs`;
-                        btnApercu = `<button type="button" class="btn btn-sm btn-purple" onclick="ouvrirApercuCoursDepuisBanque('${d.id}')">👁️ Aperçu complet</button>`;
+                        boutonsHtml = `
+                            <button type="button" class="btn btn-sm btn-purple" onclick="editerCoursDepuisBanque('${d.id}')">✏️ Éditer</button>
+                            <button type="button" class="btn btn-sm btn-secondary" onclick="ouvrirApercuCoursDepuisBanque('${d.id}')">👁️ Aperçu</button>
+                            <button type="button" class="btn btn-sm btn-success" onclick="ouvrirModalAssignation('${d.id}')">➕ Assigner</button>
+                            <button type="button" class="btn btn-sm btn-danger" onclick="supprimerDevoir('${d.id}')">🗑️</button>
+                        `;
                     }
 
                     tr.innerHTML = `
                         <td><strong>${d.titre}</strong></td>
                         <td>${badge}</td>
                         <td>${info}</td>
-                        <td style="display:flex; gap:6px;">
-                            ${btnApercu}
-                            <button type="button" class="btn btn-sm btn-success" onclick="ouvrirModalAssignation('${d.id}')">➕ Assigner</button>
-                            <button type="button" class="btn btn-sm btn-danger" onclick="supprimerDevoir('${d.id}')">🗑️</button>
+                        <td style="display:flex; gap:6px; flex-wrap:wrap;">
+                            ${boutonsHtml}
                         </td>
                     `;
                     tbody.appendChild(tr);
@@ -1117,7 +1297,7 @@
         </div>
     </div>
 
-    <!-- ONGLET 4 : IMPORT PDF -->
+    <!-- ONGLET 4 : IMPORT PDF & ÉDITEUR MANUEL -->
     <div id="tab-pdf" class="tab-pane" style="display:none;">
         <div class="card">
             <h2>📄 Importer un Cours & Exercices depuis un PDF</h2>
@@ -1151,15 +1331,21 @@
         </div>
 
         <div class="card" id="card-resultat-ia" style="display:none;">
-            <h2>📖 Aperçu Trilingue & Retouche du Cours Généré</h2>
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                <h2 style="margin:0;">📖 Validation & Retouche du Cours</h2>
+                <!-- BOUTON BASCULE ÉDITION MANUELLE -->
+                <button type="button" class="btn btn-purple" id="btn-toggle-edit-mode" onclick="basculerModeEditionManuel()">
+                    ✏️ Mode Édition manuelle
+                </button>
+            </div>
             
-            <label>Titre de la leçon :</label>
+            <label style="margin-top:15px;">Titre de la leçon :</label>
             <input type="text" id="ia-titre" style="margin-bottom:15px;">
 
             <div class="subtabs-lang">
-                <button type="button" class="subtab-lang-btn active" id="subtab-btn-fr" onclick="changerLangueApercu('fr', this)">🇫🇷 Aperçu Français</button>
-                <button type="button" class="subtab-lang-btn" id="subtab-btn-en" onclick="changerLangueApercu('en', this)">🇬🇧 English Preview</button>
-                <button type="button" class="subtab-lang-btn" id="subtab-btn-ko" onclick="changerLangueApercu('ko', this)">🇰🇷 한국어 미리보기</button>
+                <button type="button" class="subtab-lang-btn active" id="subtab-btn-fr" onclick="changerLangueApercu('fr', this)">🇫🇷 Français</button>
+                <button type="button" class="subtab-lang-btn" id="subtab-btn-en" onclick="changerLangueApercu('en', this)">🇬🇧 English</button>
+                <button type="button" class="subtab-lang-btn" id="subtab-btn-ko" onclick="changerLangueApercu('ko', this)">🇰🇷 한국어</button>
             </div>
 
             <div id="zone-apercu-dynamique"></div>
