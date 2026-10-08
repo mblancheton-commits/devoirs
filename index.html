@@ -112,7 +112,7 @@
         .modal-content { background: white; padding: 25px 30px; border-radius: 14px; width: 90%; max-width: 500px; max-height: 85vh; overflow-y: auto; }
         .radio-option { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer; margin-bottom: 8px; }
 
-        /* OVERLAYS D'ERREUR COMPLÈTEMENT DÉSACTIVÉS PAR DÉFAUT (aucun clic volé) */
+        /* OVERLAYS D'ERREUR (SÉCURISÉS : display none par défaut) */
         #punition-overlay { 
             display: none !important;
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
@@ -310,7 +310,7 @@
             <div id="quiz-theorique-conteneur"></div>
         </div>
 
-        <!-- ZONE 3 : EXERCICE D'APPLICATION PRATIQUE -->
+        <!-- ZONE 3 : EXERCICE D'APPLICATION PRATIQUE (TROUS OU RÉPONSES LIBRES) -->
         <div id="chapitre-zone-exercice" style="display:none;">
             <div id="chapitre-questions-conteneur"></div>
         </div>
@@ -414,7 +414,7 @@
             btnVerifierEmma: "Vérifier 🤖",
             btnTerminerEmma: "Terminer cette discussion avec Emma",
             coinDuProf: "📝 Le Coin du Prof",
-            phraseDeToi: "Ta phrase", // BIEN CORRIGÉ
+            phraseDeToi: "Ta phrase", // CORRECTION CONFORME
             ceQuiEstBien: "Ce qui est bien",
             lesFautes: "Les Fautes",
             phraseCorrigee: "Phrase Corrigée",
@@ -453,7 +453,7 @@
             btnVerifierEmma: "확인받기 🤖",
             btnTerminerEmma: "엠마와의 대화 완료하기",
             coinDuProf: "📝 선생님의 피드백 코너",
-            phraseDeToi: "내가 쓴 문장", // BIEN CORRIGÉ
+            phraseDeToi: "내가 쓴 문장",
             ceQuiEstBien: "잘한 점",
             lesFautes: "틀린 점",
             phraseCorrigee: "수정된 문장",
@@ -492,7 +492,7 @@
             btnVerifierEmma: "Check 🤖",
             btnTerminerEmma: "Finish this chat with Emma",
             coinDuProf: "📝 Teacher's Corner",
-            phraseDeToi: "Your sentence", // BIEN CORRIGÉ
+            phraseDeToi: "Your sentence",
             ceQuiEstBien: "What's good",
             lesFautes: "Mistakes",
             phraseCorrigee: "Corrected sentence",
@@ -581,7 +581,7 @@
         return (i18n[lang] && i18n[lang][cle]) ? i18n[lang][cle] : (i18n['fr'][cle] || cle);
     }
 
-    // FONCTION SÉCURISÉE SANS AUCUN RISQUE DE PLANTER LE SCRIPT
+    // FONCTION SÉCURISÉE BLINDÉE CONTRE LES ERREURS NULL
     function appliquerLangue() {
         const lang = langueActuelle || 'fr';
         const d = i18n[lang] || i18n.fr;
@@ -663,7 +663,6 @@
         document.getElementById('ecran-login').style.display = 'none';
         document.getElementById('bienvenue-nom-user').textContent = codeEleveActuel;
         
-        // DÉCOCHÉ PAR DÉFAUT
         modeSevereActif = false;
         const check = document.getElementById('check-severe-mode');
         if (check) check.checked = false;
@@ -775,7 +774,7 @@
         const conteneur = document.getElementById('chapitre-liste-blocs');
         conteneur.innerHTML = "";
 
-        // 1. EN PREMIER : FICHE DE COURS THÉORIQUE (SLIDE PAR SLIDE)
+        // 1. EN PREMIER : FICHE DE COURS THÉORIQUE
         const slides = (d.bloc_cours && d.bloc_cours.slides) ? d.bloc_cours.slides : [];
         const cardCours = document.createElement('div');
         cardCours.className = "bloc-nav-card";
@@ -788,7 +787,7 @@
         `;
         conteneur.appendChild(cardCours);
 
-        // 2. EN DEUXIÈME : MÉMO DES POINTS CLÉS (SYNTHÈSE DE LA LEÇON)
+        // 2. EN DEUXIÈME : MÉMO DES POINTS CLÉS
         const points = d.points_importants || {};
         const lang = (langueActuelle || 'fr').toLowerCase();
         const listeCles = points[lang] || points['fr'] || [];
@@ -802,7 +801,7 @@
             conteneur.appendChild(cardPoints);
         }
 
-        // 3. EN TROISIÈME : QUIZ THÉORIQUE INTERMÉDIAIRE
+        // 3. EN TROISIÈME : QUIZ THÉORIQUE
         if (d.quiz_theorique && (d.quiz_theorique.questions || []).length > 0) {
             const cardQuiz = document.createElement('div');
             cardQuiz.className = "bloc-nav-card";
@@ -816,14 +815,14 @@
             conteneur.appendChild(cardQuiz);
         }
 
-        // 4. EN DERNIER : LES EXERCICES D'APPLICATION PRATIQUE
+        // 4. EN DERNIER : EXERCICES D'APPLICATION PRATIQUE
         (d.blocs_exercices || []).forEach((b, idx) => {
             const cardExo = document.createElement('div');
             cardExo.className = "bloc-nav-card";
             cardExo.innerHTML = `
                 <div>
                     <strong style="font-size:1.15em; color:var(--primary);">${b.titre || `Exercice ${idx + 1}`}</strong>
-                    <div style="color:#64748b; font-size:0.9em;">Pratique d'application : ${(b.questions || []).length} phrases</div>
+                    <div style="color:#64748b; font-size:0.9em;">Pratique d'application : ${(b.questions || []).length} questions</div>
                 </div>
                 <button type="button" class="btn" onclick="afficherBlocExercice(${idx})">Commencer ▶</button>
             `;
@@ -836,7 +835,7 @@
         document.getElementById('vue-chapitre-blocs').style.display = 'block';
     };
 
-    // --- LECTEUR DE COURS SLIDE PAR SLIDE AVEC BOUTONS DISPARITION DYNAMIQUE ---
+    // LECTEUR SLIDE PAR SLIDE AVEC BOUTONS DISPARITION DYNAMIQUE
     window.afficherBlocCours = function() {
         document.getElementById('vue-chapitre-blocs').style.display = 'none';
         document.getElementById('vue-contenu-bloc-chapitre').style.display = 'block';
@@ -871,11 +870,9 @@
         document.getElementById('cours-slide-compteur').textContent = `Fiche ${indexSlideCoursActif + 1} / ${slides.length}`;
         document.getElementById('cours-slide-contenu').textContent = texte;
 
-        // DISPARITION DU BOUTON PRÉCÉDENT SUR LA 1ÈRE FICHE
         const btnPrec = document.getElementById('btn-slide-prec');
         btnPrec.style.display = (indexSlideCoursActif === 0) ? 'none' : 'inline-block';
 
-        // DISPARITION DU BOUTON SUIVANT SUR LA DERNIÈRE FICHE
         const btnSuiv = document.getElementById('btn-slide-suiv');
         btnSuiv.style.display = (indexSlideCoursActif === slides.length - 1) ? 'none' : 'inline-block';
     }
@@ -890,7 +887,7 @@
         retourMenuBlocs();
     };
 
-    // --- QUIZ THÉORIQUE INTERMÉDIAIRE ---
+    // QUIZ THÉORIQUE INTERMÉDIAIRE
     window.afficherBlocQuizTheorique = function() {
         document.getElementById('vue-chapitre-blocs').style.display = 'none';
         document.getElementById('vue-contenu-bloc-chapitre').style.display = 'block';
@@ -958,8 +955,13 @@
         zoneExp.style.display = "block";
     };
 
-    // --- EXERCICES D'APPLICATION PRATIQUE ---
+    // =========================================================================
+    // EXERCICES D'APPLICATION (TROUS OU RÉPONSES LIBRES AVEC SAUVEGARDE)
+    // =========================================================================
+    window.blocExerciceIndexActif = 0;
+
     window.afficherBlocExercice = function(blocIdx) {
+        window.blocExerciceIndexActif = blocIdx;
         document.getElementById('vue-chapitre-blocs').style.display = 'none';
         document.getElementById('vue-contenu-bloc-chapitre').style.display = 'block';
         document.getElementById('chapitre-zone-cours').style.display = 'none';
@@ -970,11 +972,98 @@
         document.getElementById('chapitre-bloc-actif-titre').textContent = bloc.titre || `Exercice ${blocIdx + 1}`;
 
         const conteneur = document.getElementById('chapitre-questions-conteneur');
-        conteneur.innerHTML = (bloc.questions || []).map((qItem, idx) => `
-            <div class="phrase-box-interactif">
-                <strong>${idx + 1}. </strong> ${qItem.q}
-            </div>
-        `).join('');
+        conteneur.innerHTML = "";
+
+        if (bloc.consigne) {
+            const pConsigne = document.createElement('p');
+            pConsigne.style.color = "#64748b";
+            pConsigne.style.fontStyle = "italic";
+            pConsigne.style.marginBottom = "20px";
+            pConsigne.textContent = bloc.consigne;
+            conteneur.appendChild(pConsigne);
+        }
+
+        const suivi = assignationActive.suiviBlocs || {};
+        const reponses = (suivi[bloc.id] && suivi[bloc.id].reponses) ? suivi[bloc.id].reponses : {};
+
+        (bloc.questions || []).forEach((qItem, idx) => {
+            const item = document.createElement('div');
+            item.className = "phrase-box-interactif";
+
+            const texteQuestion = qItem.q || "";
+
+            // CAS 1 : PHRASE À TROUS (____)
+            if (texteQuestion.includes('____') || texteQuestion.includes('___')) {
+                const parts = texteQuestion.includes('____') ? texteQuestion.split('____') : texteQuestion.split('___');
+                let html = `<span>${idx + 1}.</span> `;
+                for (let i = 0; i < parts.length; i++) {
+                    html += parts[i];
+                    if (i < parts.length - 1) {
+                        const cleTrou = `${idx}_trou_${i}`;
+                        const val = reponses[cleTrou] || "";
+                        html += ` <input type="text" class="input-calme" value="${val}" placeholder="..." oninput="noterReponseExercice('${bloc.id}', '${cleTrou}', this.value)"> `;
+                    }
+                }
+                item.innerHTML = html;
+            } 
+            // CAS 2 : QUESTION OUVERTE / RÉPONSE LIBRE (EX: 25 QUESTIONS DU TEMPS)
+            else {
+                const cleLibre = `${idx}_reponse_libre`;
+                const valLibre = reponses[cleLibre] || "";
+
+                item.innerHTML = `
+                    <div style="font-weight:bold; color:var(--primary); font-size:1.05em; margin-bottom:8px;">
+                        ${idx + 1}. ${texteQuestion}
+                    </div>
+                    <textarea class="input-calme" style="width:100%; box-sizing:border-box; font-family:inherit; min-height:65px; line-height:1.6;" placeholder="Tapez votre réponse en français..." oninput="noterReponseExercice('${bloc.id}', '${cleLibre}', this.value)">${valLibre}</textarea>
+                `;
+            }
+
+            conteneur.appendChild(item);
+        });
+
+        // BOUTONS DE SAUVEGARDE
+        const barActions = document.createElement('div');
+        barActions.style.display = "flex";
+        barActions.style.justifyContent = "space-between";
+        barActions.style.alignItems = "center";
+        barActions.style.marginTop = "30px";
+        barActions.style.paddingTop = "20px";
+        barActions.style.borderTop = "1px solid #e2e8f0";
+        barActions.style.flexWrap = "wrap";
+        barActions.style.gap = "10px";
+
+        barActions.innerHTML = `
+            <button type="button" class="btn btn-warning" onclick="sauvegarderProgressionExercice(false)">💾 Sauvegarder pour plus tard</button>
+            <button type="button" class="btn btn-success" onclick="sauvegarderProgressionExercice(true)">✅ Marquer cet exercice comme terminé</button>
+        `;
+        conteneur.appendChild(barActions);
+    };
+
+    window.noterReponseExercice = function(blocId, cle, valeur) {
+        if (!assignationActive) return;
+        if (!assignationActive.suiviBlocs) assignationActive.suiviBlocs = {};
+        if (!assignationActive.suiviBlocs[blocId]) assignationActive.suiviBlocs[blocId] = { statut: "en_cours", reponses: {} };
+        if (!assignationActive.suiviBlocs[blocId].reponses) assignationActive.suiviBlocs[blocId].reponses = {};
+
+        assignationActive.suiviBlocs[blocId].reponses[cle] = valeur;
+    };
+
+    window.sauvegarderProgressionExercice = async function(marquerTermine) {
+        if (!assignationActive) return;
+        const bloc = assignationActive.blocs_exercices[window.blocExerciceIndexActif];
+        if (!bloc) return;
+
+        const suivi = assignationActive.suiviBlocs || {};
+        if (!suivi[bloc.id]) suivi[bloc.id] = { reponses: {} };
+        suivi[bloc.id].statut = marquerTermine ? "fait" : "en_cours";
+
+        await db.collection("assignations").doc(assignationActive.id).update({
+            suiviBlocs: suivi
+        });
+
+        alert(marquerTermine ? "✅ Exercice marqué comme terminé !" : "💾 Vos réponses ont été sauvegardées !");
+        retourMenuBlocs();
     };
 
     // ==========================================
@@ -1180,7 +1269,7 @@
             return;
         }
 
-        // 2. PAR DÉFAUT : TOAST BIENVEILLANT SANS ÉCRAN ROUGE
+        // 2. PAR DÉFAUT : TOAST BIENVEILLANT
         const toast = document.getElementById('soft-encouragement-toast');
         const toastTxt = document.getElementById('soft-toast-text');
         
@@ -1329,7 +1418,7 @@
         document.getElementById('ecran-tableau-de-bord').style.display = 'block';
     };
 
-    // DÉMARRAGE SÉCURISÉ APRÈS CHARGEMENT DU DOM
+    // DÉMARRAGE FIABLE APRÈS CHARGEMENT
     document.addEventListener('DOMContentLoaded', () => {
         if (langueActuelle) appliquerLangue();
         verifierSession();
