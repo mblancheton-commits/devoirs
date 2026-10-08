@@ -112,7 +112,7 @@
         .modal-content { background: white; padding: 25px 30px; border-radius: 14px; width: 90%; max-width: 500px; max-height: 85vh; overflow-y: auto; }
         .radio-option { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer; margin-bottom: 8px; }
 
-        /* OVERLAYS D'ERREUR (DÉSACTIVÉS PAR DÉFAUT) */
+        /* OVERLAYS D'ERREUR */
         #punition-overlay { 
             display: none !important;
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
@@ -186,7 +186,6 @@
         <h1 id="txt-welcome-heading">Bienvenue !</h1>
         <div class="welcome-user-box" id="bienvenue-nom-user">-</div>
         
-        <!-- MODE SÉVÈRE DÉCOCHÉ PAR DÉFAUT -->
         <div class="severe-mode-card" onclick="toggleSevereMode()">
             <input type="checkbox" id="check-severe-mode" onclick="event.stopPropagation()">
             <label for="check-severe-mode" id="txt-severe-mode" style="cursor:pointer; font-weight:600; color:#b91c1c;">
@@ -232,7 +231,8 @@
             <div class="emma-avatar">👧</div>
             <div>
                 <h3 style="margin:0; color:#581c87;">Emma</h3>
-                <p id="emma-description" style="margin:4px 0 0 0; color:#6b21a8; font-size:0.95em;">Ton amie française bienveillante (A2-B1). Réponds à ses questions et elle corrigera tes phrases en détail !</p>
+                <!-- MENTION (A2-B1) SUPPRIMÉE CI-DESSOUS -->
+                <p id="emma-description" style="margin:4px 0 0 0; color:#6b21a8; font-size:0.95em;">Ton amie française bienveillante. Réponds à ses questions et elle corrigera tes phrases en détail !</p>
             </div>
         </div>
 
@@ -310,7 +310,7 @@
             <div id="quiz-theorique-conteneur"></div>
         </div>
 
-        <!-- ZONE 3 : EXERCICE D'APPLICATION PRATIQUE (AVEC BOUTON SAUVEGARDER PAR LIGNE) -->
+        <!-- ZONE 3 : EXERCICE D'APPLICATION PRATIQUE (TROUS OU RÉPONSES LIBRES) -->
         <div id="chapitre-zone-exercice" style="display:none;">
             <div id="chapitre-questions-conteneur"></div>
         </div>
@@ -409,7 +409,7 @@
             btnOuvrirCours: "Ouvrir la leçon ▶",
             btnEntrainement: "✨ Créer un entraînement",
             retourDevoirs: "Retour aux devoirs",
-            descriptionEmma: "Ton amie française bienveillante (A2-B1). Réponds à ses questions et elle corrigera tes phrases en détail !",
+            descriptionEmma: "Ton amie française bienveillante. Réponds à ses questions et elle corrigera tes phrases en détail !", // MENTION A2-B1 RETIRÉE
             placeholderEmma: "Tape ta réponse en français...",
             btnVerifierEmma: "Vérifier 🤖",
             btnTerminerEmma: "Terminer cette discussion avec Emma",
@@ -448,7 +448,7 @@
             btnOuvrirCours: "수업 열기 ▶",
             btnEntrainement: "✨ 맞춤 연습문제 생성",
             retourDevoirs: "과제 목록으로",
-            descriptionEmma: "친절한 프랑스인 친구 엠마(A2-B1)입니다. 질문에 답하면 문장을 자세히 교정해 줍니다!",
+            descriptionEmma: "친절한 프랑스인 친구 엠마입니다. 질문에 답하면 문장을 자세히 교정해 줍니다!", // MENTION A2-B1 RETIRÉE
             placeholderEmma: "프랑스어로 답변을 작성하세요...",
             btnVerifierEmma: "확인받기 🤖",
             btnTerminerEmma: "엠마와의 대화 완료하기",
@@ -487,7 +487,7 @@
             btnOuvrirCours: "Open lesson ▶",
             btnEntrainement: "✨ Create practice drill",
             retourDevoirs: "Back to homework",
-            descriptionEmma: "Your friendly French pal (A2-B1). Answer her questions and she will review your sentences in detail!",
+            descriptionEmma: "Your friendly French pal. Answer her questions and she will review your sentences in detail!", // MENTION A2-B1 RETIRÉE
             placeholderEmma: "Type your answer in French...",
             btnVerifierEmma: "Check 🤖",
             btnTerminerEmma: "Finish this chat with Emma",
@@ -1032,7 +1032,7 @@
         barActions.style.paddingTop = "20px";
         barActions.style.borderTop = "1px solid #e2e8f0";
         barActions.style.flexWrap = "wrap";
-        barActions.style.gap = "10px";
+        barActions.gap = "10px";
 
         barActions.innerHTML = `
             <button type="button" class="btn btn-warning" onclick="sauvegarderProgressionExercice(false)">💾 Sauvegarder tout le bloc</button>
@@ -1269,7 +1269,6 @@
     function declencherErreurNotification() {
         const lang = (langueActuelle || 'fr').toLowerCase();
 
-        // SI MODE SÉVÈRE COCHÉ
         if (modeSevereActif) {
             const overlay = document.getElementById('punition-overlay');
             const text = document.getElementById('punition-text');
@@ -1294,7 +1293,6 @@
             return;
         }
 
-        // PAR DÉFAUT : TOAST DOUX
         const toast = document.getElementById('soft-encouragement-toast');
         const toastTxt = document.getElementById('soft-toast-text');
         
