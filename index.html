@@ -94,7 +94,7 @@
 
         #vue-contenu-bloc-chapitre { display: none; }
         .cours-slide-container { background: white; padding: 30px; border-radius: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); line-height: 1.9; font-size: 1.1em; }
-        .phrase-item { background: white; border: 1px solid #e2e8f0; padding: 16px; border-radius: 10px; margin-bottom: 15px; font-size: 1.08em; line-height: 2.2; }
+        .phrase-item { background: white; border: 1px solid #e2e8f0; padding: 18px; border-radius: 10px; margin-bottom: 16px; font-size: 1.08em; line-height: 2.0; }
         .input-calme { padding: 8px 12px; border: 2px solid #cbd5e0; border-radius: 8px; font-size: 1em; font-family: inherit; color: #1e293b; font-weight: 600; background: white; }
 
         /* QUIZ THÉORIQUE */
@@ -112,7 +112,7 @@
         .modal-content { background: white; padding: 25px 30px; border-radius: 14px; width: 90%; max-width: 500px; max-height: 85vh; overflow-y: auto; }
         .radio-option { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer; margin-bottom: 8px; }
 
-        /* OVERLAYS D'ERREUR (SÉCURISÉS : display none par défaut) */
+        /* OVERLAYS D'ERREUR (DÉSACTIVÉS PAR DÉFAUT) */
         #punition-overlay { 
             display: none !important;
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
@@ -310,7 +310,7 @@
             <div id="quiz-theorique-conteneur"></div>
         </div>
 
-        <!-- ZONE 3 : EXERCICE D'APPLICATION PRATIQUE (TROUS OU RÉPONSES LIBRES) -->
+        <!-- ZONE 3 : EXERCICE D'APPLICATION PRATIQUE (AVEC BOUTON SAUVEGARDER PAR LIGNE) -->
         <div id="chapitre-zone-exercice" style="display:none;">
             <div id="chapitre-questions-conteneur"></div>
         </div>
@@ -414,7 +414,7 @@
             btnVerifierEmma: "Vérifier 🤖",
             btnTerminerEmma: "Terminer cette discussion avec Emma",
             coinDuProf: "📝 Le Coin du Prof",
-            phraseDeToi: "Ta phrase", // CORRECTION CONFORME
+            phraseDeToi: "Ta phrase",
             ceQuiEstBien: "Ce qui est bien",
             lesFautes: "Les Fautes",
             phraseCorrigee: "Phrase Corrigée",
@@ -581,7 +581,6 @@
         return (i18n[lang] && i18n[lang][cle]) ? i18n[lang][cle] : (i18n['fr'][cle] || cle);
     }
 
-    // FONCTION SÉCURISÉE BLINDÉE CONTRE LES ERREURS NULL
     function appliquerLangue() {
         const lang = langueActuelle || 'fr';
         const d = i18n[lang] || i18n.fr;
@@ -835,7 +834,6 @@
         document.getElementById('vue-chapitre-blocs').style.display = 'block';
     };
 
-    // LECTEUR SLIDE PAR SLIDE AVEC BOUTONS DISPARITION DYNAMIQUE
     window.afficherBlocCours = function() {
         document.getElementById('vue-chapitre-blocs').style.display = 'none';
         document.getElementById('vue-contenu-bloc-chapitre').style.display = 'block';
@@ -887,7 +885,6 @@
         retourMenuBlocs();
     };
 
-    // QUIZ THÉORIQUE INTERMÉDIAIRE
     window.afficherBlocQuizTheorique = function() {
         document.getElementById('vue-chapitre-blocs').style.display = 'none';
         document.getElementById('vue-contenu-bloc-chapitre').style.display = 'block';
@@ -956,7 +953,7 @@
     };
 
     // =========================================================================
-    // EXERCICES D'APPLICATION (TROUS OU RÉPONSES LIBRES AVEC SAUVEGARDE)
+    // EXERCICES D'APPLICATION AVEC BOUTON SAUVEGARDER PAR LIGNE
     // =========================================================================
     window.blocExerciceIndexActif = 0;
 
@@ -988,7 +985,7 @@
 
         (bloc.questions || []).forEach((qItem, idx) => {
             const item = document.createElement('div');
-            item.className = "phrase-box-interactif";
+            item.className = "phrase-item";
 
             const texteQuestion = qItem.q || "";
 
@@ -1001,9 +998,10 @@
                     if (i < parts.length - 1) {
                         const cleTrou = `${idx}_trou_${i}`;
                         const val = reponses[cleTrou] || "";
-                        html += ` <input type="text" class="input-calme" value="${val}" placeholder="..." oninput="noterReponseExercice('${bloc.id}', '${cleTrou}', this.value)"> `;
+                        html += ` <input type="text" class="input-calme" id="champ-trou-${idx}-${i}" value="${val}" placeholder="..." oninput="noterReponseExercice('${bloc.id}', '${cleTrou}', this.value)"> `;
                     }
                 }
+                html += ` <button type="button" class="btn btn-sm btn-secondary" id="btn-save-ligne-${idx}" onclick="sauvegarderLigneUnique('${bloc.id}', ${idx})" style="margin-left:8px;">💾 Sauvegarder</button>`;
                 item.innerHTML = html;
             } 
             // CAS 2 : QUESTION OUVERTE / RÉPONSE LIBRE (EX: 25 QUESTIONS DU TEMPS)
@@ -1015,14 +1013,17 @@
                     <div style="font-weight:bold; color:var(--primary); font-size:1.05em; margin-bottom:8px;">
                         ${idx + 1}. ${texteQuestion}
                     </div>
-                    <textarea class="input-calme" style="width:100%; box-sizing:border-box; font-family:inherit; min-height:65px; line-height:1.6;" placeholder="Tapez votre réponse en français..." oninput="noterReponseExercice('${bloc.id}', '${cleLibre}', this.value)">${valLibre}</textarea>
+                    <div style="display:flex; gap:10px; align-items:flex-end;">
+                        <textarea class="input-calme" id="champ-libre-${idx}" style="flex:1; box-sizing:border-box; font-family:inherit; min-height:65px; line-height:1.6;" placeholder="Tapez votre réponse en français..." oninput="noterReponseExercice('${bloc.id}', '${cleLibre}', this.value)">${valLibre}</textarea>
+                        <button type="button" class="btn btn-sm btn-secondary" id="btn-save-ligne-${idx}" onclick="sauvegarderLigneUnique('${bloc.id}', ${idx})" style="height:42px;">💾 Sauvegarder</button>
+                    </div>
                 `;
             }
 
             conteneur.appendChild(item);
         });
 
-        // BOUTONS DE SAUVEGARDE
+        // BOUTONS GLOBAUX EN BAS DE L'EXERCICE
         const barActions = document.createElement('div');
         barActions.style.display = "flex";
         barActions.style.justifyContent = "space-between";
@@ -1034,7 +1035,7 @@
         barActions.style.gap = "10px";
 
         barActions.innerHTML = `
-            <button type="button" class="btn btn-warning" onclick="sauvegarderProgressionExercice(false)">💾 Sauvegarder pour plus tard</button>
+            <button type="button" class="btn btn-warning" onclick="sauvegarderProgressionExercice(false)">💾 Sauvegarder tout le bloc</button>
             <button type="button" class="btn btn-success" onclick="sauvegarderProgressionExercice(true)">✅ Marquer cet exercice comme terminé</button>
         `;
         conteneur.appendChild(barActions);
@@ -1047,6 +1048,30 @@
         if (!assignationActive.suiviBlocs[blocId].reponses) assignationActive.suiviBlocs[blocId].reponses = {};
 
         assignationActive.suiviBlocs[blocId].reponses[cle] = valeur;
+    };
+
+    // SAUVEGARDE INDIVIDUELLE PAR LIGNE AVEC FEEDBACK VISUEL
+    window.sauvegarderLigneUnique = async function(blocId, idx) {
+        if (!assignationActive) return;
+        const btn = document.getElementById(`btn-save-ligne-${idx}`);
+
+        try {
+            await db.collection("assignations").doc(assignationActive.id).update({
+                suiviBlocs: assignationActive.suiviBlocs || {}
+            });
+
+            if (btn) {
+                const txtOriginal = btn.innerHTML;
+                btn.innerHTML = "✓ Enregistré !";
+                btn.className = "btn btn-sm btn-success";
+                setTimeout(() => {
+                    btn.innerHTML = txtOriginal;
+                    btn.className = "btn btn-sm btn-secondary";
+                }, 1500);
+            }
+        } catch(e) {
+            alert("Erreur de sauvegarde : " + e.message);
+        }
     };
 
     window.sauvegarderProgressionExercice = async function(marquerTermine) {
@@ -1244,7 +1269,7 @@
     function declencherErreurNotification() {
         const lang = (langueActuelle || 'fr').toLowerCase();
 
-        // 1. SI MODE SÉVÈRE COCHÉ : GRAND ÉCRAN ROUGE
+        // SI MODE SÉVÈRE COCHÉ
         if (modeSevereActif) {
             const overlay = document.getElementById('punition-overlay');
             const text = document.getElementById('punition-text');
@@ -1269,7 +1294,7 @@
             return;
         }
 
-        // 2. PAR DÉFAUT : TOAST BIENVEILLANT
+        // PAR DÉFAUT : TOAST DOUX
         const toast = document.getElementById('soft-encouragement-toast');
         const toastTxt = document.getElementById('soft-toast-text');
         
@@ -1418,7 +1443,6 @@
         document.getElementById('ecran-tableau-de-bord').style.display = 'block';
     };
 
-    // DÉMARRAGE FIABLE APRÈS CHARGEMENT
     document.addEventListener('DOMContentLoaded', () => {
         if (langueActuelle) appliquerLangue();
         verifierSession();
