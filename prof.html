@@ -104,7 +104,6 @@
         .box-retouche-ia { background: #faf5ff; border: 2px solid #e9d5ff; border-radius: 12px; padding: 20px; margin-top: 25px; }
         .edit-box-item { background: white; border: 1px solid #cbd5e0; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
 
-        /* BARRE DE FILTRES POUR LA BANQUE DE DEVOIRS */
         .filtres-banque-bar { display: flex; gap: 10px; align-items: center; margin-top: 15px; flex-wrap: wrap; }
         .btn-filtre-banque { padding: 8px 16px; border-radius: 20px; border: 1px solid #cbd5e0; background: #f1f5f9; color: #475569; font-weight: bold; cursor: pointer; font-size: 0.9em; transition: all 0.2s; }
         .btn-filtre-banque.active { background: var(--accent); color: white; border-color: var(--accent); }
@@ -176,8 +175,7 @@
         const parPage = 10;
         let elevesFiltres = [];
 
-        // NOUVEAU : GESTION DES FILTRES DE LA BANQUE DE DEVOIRS
-        let filtreTypeBanqueActif = 'tous'; // 'tous', 'chapitre_cours', 'emma', 'interactif'
+        let filtreTypeBanqueActif = 'tous';
         let texteRechercheBanque = '';
 
         window.basculerOnglet = function(tabId, btn) {
@@ -361,6 +359,126 @@
             });
         }
 
+        // =========================================================================
+        // NOUVEAU : ASSIGNER DES DEVOIRS DIRECTEMENT DANS LA FICHE DE L'ÉLÈVE
+        // =========================================================================
+        window.ouvrirModalAssignerADirectionEleve = function() {
+            if (!eleveSelectionne) return;
+
+            document.getElementById('assign-eleve-nom-titre').textContent = eleveSelectionne.code;
+            document.getElementById('recherche-assign-devoirs-input').value = "";
+            genererListeCochesDevoirs(listeDevoirs);
+            document.getElementById('modal-assignation-directe-eleve').classList.add('ouverte');
+        };
+
+        function genererListeCochesDevoirs(devoirs) {
+            const conteneur = document.getElementById('conteneur-coches-devoirs-eleve');
+            if (!conteneur) return;
+            conteneur.innerHTML = "";
+
+            if (devoirs.length === 0) {
+                conteneur.innerHTML = `<div style="color:#64748b; padding:10px; text-align:center;">Aucun devoir disponible.</div>`;
+                return;
+            }
+
+            devoirs.forEach(d => {
+                const div = document.createElement('div');
+                div.className = "item-coche-eleve";
+                let typeBadge = (d.typeDevoir === 'emma') ? '🤖 Emma' : (d.typeDevoir === 'interactif' ? '⚡ Interactif' : '📖 Cours');
+                div.innerHTML = `
+                    <input type="checkbox" id="chk-devoir-${d.id}" value="${d.id}" class="chk-assign-devoir-item">
+                    <label for="chk-devoir-${d.id}">
+                        <strong>${d.titre}</strong> <span style="font-size:0.85em; color:#64748b;">(${typeBadge})</span>
+                    </label>
+                `;
+                conteneur.appendChild(div);
+            });
+        }
+
+        window.filtrerCochesDevoirsAssignation = function() {
+            const txt = (document.getElementById('recherche-assign-devoirs-input').value || '').trim().toLowerCase();
+            const filtrés = listeDevoirs.filter(d => (d.titre || '').toLowerCase().includes(txt));
+            genererListeCochesDevoirs(filtrés);
+        };
+
+        window.basculerToutesLesCochesDevoirs = function() {
+            const checkboxes = document.querySelectorAll('.chk-assign-devoir-item');
+            const tousCoches = Array.from(checkboxes).every(c => c.checked);
+            checkboxes.forEach(c => c.checked = !tousCoches);
+        };
+
+        window.confirmerAssignationDirecteEleve = async function() {
+            if (!eleveSelectionne) return;
+
+            const selectionnes = Array.from(document.querySelectorAll('.chk-assign-devoir-item:checked')).map(c => c.value);
+            if (selectionnes.length === 0) return alert("Veuillez cocher au moins un devoir !");
+
+            const btn = document.getElementById('btn-valider-assignation-directe');
+            btn.disabled = true;
+            btn.textContent = "⏳ Assignation...";
+
+            try {
+                const batch = db.batch();
+                selectionnes.forEach(devoirId => {
+                    const d = devoirsMap[devoirId];
+                    if (!d) return;
+
+                    const nouvRef = db.collection("assignations").doc();
+                    if (d.typeDevoir === "emma") {
+                        batch.set(nouvRef, {
+                            eleveCode: eleveSelectionne.code,
+                            devoirId: d.id,
+                            devoirTitre: d.titre,
+                            typeDevoir: "emma",
+                            questions: d.questions || [],
+                            statut: "non_commence",
+                            retoursEmma: {},
+                            dateAssignation: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    } else if (d.typeDevoir === "interactif") {
+                        batch.set(nouvRef, {
+                            eleveCode: eleveSelectionne.code,
+                            devoirId: d.id,
+                            devoirTitre: d.titre,
+                            typeDevoir: "interactif",
+                            phrases: d.phrases || [],
+                            statut: "non_commence",
+                            score: 0,
+                            totalQuestions: (d.phrases || []).length,
+                            totalErreurs: 0,
+                            fautesDetails: [],
+                            reponsesValidees: {},
+                            dateAssignation: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    } else {
+                        const suiviBlocs = { cours: { statut: "non_lu" } };
+                        (d.blocs_exercices || []).forEach(b => { suiviBlocs[b.id] = { statut: "non_fait", reponses: {} }; });
+                        batch.set(nouvRef, {
+                            eleveCode: eleveSelectionne.code,
+                            devoirId: d.id,
+                            devoirTitre: d.titre,
+                            typeDevoir: "chapitre_cours",
+                            points_importants: d.points_importants || null,
+                            quiz_theorique: d.quiz_theorique || null,
+                            bloc_cours: d.bloc_cours || null,
+                            blocs_exercices: d.blocs_exercices || [],
+                            suiviBlocs: suiviBlocs,
+                            dateAssignation: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    }
+                });
+
+                await batch.commit();
+                alert(`✅ ${selectionnes.length} devoir(s) assigné(s) à ${eleveSelectionne.code} !`);
+                document.getElementById('modal-assignation-directe-eleve').classList.remove('ouverte');
+            } catch(e) {
+                alert("Erreur lors de l'assignation : " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "✅ Valider l'assignation";
+            }
+        };
+
         function afficherDerniersDevoirsGlobaux() {
             const tbody = document.getElementById('table-derniers-devoirs-corps');
             if (!tbody) return;
@@ -411,7 +529,7 @@
             }
         };
 
-        // ASSIGNATION
+        // ASSIGNATION MODAL GÉNÉRALE (DEPUIS LA BANQUE)
         window.ouvrirModalAssignation = function(devoirId) {
             devoirAAssigner = devoirsMap[devoirId];
             if (!devoirAAssigner) return;
@@ -1033,9 +1151,6 @@
             modal.classList.add('ouverte');
         };
 
-        // =========================================================================
-        // NOUVEAU : SYSTÈME DE RECHERCHE DYNAMIQUE ET FILTRAGE DE LA BANQUE
-        // =========================================================================
         window.filtrerBanqueDevoirs = function() {
             const input = document.getElementById('input-recherche-banque');
             texteRechercheBanque = (input ? input.value : '').trim().toLowerCase();
@@ -1054,14 +1169,12 @@
             if (!tbody) return;
             tbody.innerHTML = "";
 
-            // 1. Filtrer par type et par texte
             let devoirsAffiches = listeDevoirs.filter(d => {
                 const matchType = (filtreTypeBanqueActif === 'tous') || (d.typeDevoir === filtreTypeBanqueActif);
                 const matchTexte = !texteRechercheBanque || (d.titre || '').toLowerCase().includes(texteRechercheBanque);
                 return matchType && matchTexte;
             });
 
-            // 2. Mettre à jour les compteurs sur les boutons
             const nbTous = listeDevoirs.length;
             const nbCours = listeDevoirs.filter(d => d.typeDevoir === 'chapitre_cours').length;
             const nbEmma = listeDevoirs.filter(d => d.typeDevoir === 'emma').length;
@@ -1235,9 +1348,13 @@
         </div>
 
         <div id="vue-fiche-eleve" style="display:none;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
                 <button type="button" class="btn btn-secondary" onclick="fermerFicheEleve()">← Revenir à la liste des élèves</button>
-                <button type="button" class="btn btn-danger" onclick="supprimerEleveActif()">🗑️ Supprimer définitivement cet élève</button>
+                <div style="display:flex; gap:10px;">
+                    <!-- NOUVEAU BOUTON D'ASSIGNATION DIRECTE DANS LA FICHE DE L'ÉLÈVE -->
+                    <button type="button" class="btn btn-success" onclick="ouvrirModalAssignerADirectionEleve()">➕ Assigner un devoir à cet élève</button>
+                    <button type="button" class="btn btn-danger" onclick="supprimerEleveActif()">🗑️ Supprimer l'élève</button>
+                </div>
             </div>
 
             <div class="card" style="border-left: 6px solid var(--accent);">
@@ -1404,13 +1521,11 @@
         <div class="card">
             <h2>📚 Banque de Devoirs disponibles</h2>
 
-            <!-- BARRE DE RECHERCHE DYNAMIQUE -->
             <div class="recherche-box">
                 <span>🔍</span>
                 <input type="text" id="input-recherche-banque" placeholder="Rechercher un devoir par mot-clé dans le titre..." oninput="filtrerBanqueDevoirs()">
             </div>
 
-            <!-- BOUTONS DE FILTRAGE PAR TYPE -->
             <div class="filtres-banque-bar">
                 <button type="button" class="btn-filtre-banque active" onclick="changerFiltreTypeBanque('tous', this)">
                     🌐 Tous <span id="compteur-filtre-tous">(0)</span>
@@ -1436,7 +1551,7 @@
     </div>
 </div>
 
-<!-- 1. MODALE D'ASSIGNATION -->
+<!-- 1. MODALE D'ASSIGNATION GÉNÉRALE (DEPUIS LA BANQUE) -->
 <div class="modal" id="modal-assignation">
     <div class="modal-content" style="max-width: 550px;">
         <h2 style="margin-top:0; color:var(--primary);">➕ Assigner un devoir</h2>
@@ -1456,7 +1571,27 @@
     </div>
 </div>
 
-<!-- 2. MODALE CONSULTATION BANQUE -->
+<!-- 2. NOUVELLE MODALE : ASSIGNATION DIRECTE DEPUIS LA FICHE ÉLÈVE -->
+<div class="modal" id="modal-assignation-directe-eleve">
+    <div class="modal-content" style="max-width: 600px;">
+        <h2 style="margin-top:0; color:var(--primary);">➕ Assigner des devoirs à cet élève</h2>
+        <p style="margin:0 0 10px 0; color:#64748b;">Élève : <strong id="assign-eleve-nom-titre" style="color:var(--accent);">-</strong></p>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+            <input type="text" id="recherche-assign-devoirs-input" placeholder="Rechercher parmi les devoirs..." oninput="filtrerCochesDevoirsAssignation()" style="padding:8px 12px; font-size:0.9em; flex:1; margin-right:10px;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="basculerToutesLesCochesDevoirs()">☑️ Tout cocher / Décocher</button>
+        </div>
+
+        <div class="liste-coches-eleves" id="conteneur-coches-devoirs-eleve"></div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('modal-assignation-directe-eleve').classList.remove('ouverte')">Annuler</button>
+            <button type="button" class="btn btn-success" id="btn-valider-assignation-directe" onclick="confirmerAssignationDirecteEleve()">✅ Valider l'assignation</button>
+        </div>
+    </div>
+</div>
+
+<!-- 3. MODALE CONSULTATION BANQUE -->
 <div class="modal" id="modal-apercu-cours">
     <div class="modal-content">
         <h2 id="modal-apercu-titre" style="margin-top:0; color:var(--primary);">-</h2>
@@ -1472,7 +1607,7 @@
     </div>
 </div>
 
-<!-- 3. MODALE RETOURS EMMA PROF -->
+<!-- 4. MODALE RETOURS EMMA PROF -->
 <div class="modal" id="modal-fautes">
     <div class="modal-content">
         <h2 id="modal-titre" style="margin-top:0; color:var(--primary);">-</h2>
