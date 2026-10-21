@@ -99,6 +99,7 @@
         .apercu-section { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px; margin-bottom: 20px; }
         .apercu-section h3 { margin-top: 0; color: var(--primary); font-size: 1.15em; border-bottom: 1px dashed #cbd5e0; padding-bottom: 8px; }
         .quiz-item-apercu { background: white; border: 1px solid #cbd5e0; border-radius: 8px; padding: 14px; margin-bottom: 12px; }
+
         .box-retouche-ia { background: #faf5ff; border: 2px solid #e9d5ff; border-radius: 12px; padding: 20px; margin-top: 25px; }
         .edit-box-item { background: white; border: 1px solid #cbd5e0; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
 
@@ -175,6 +176,9 @@
 
         let filtreTypeBanqueActif = 'tous';
         let texteRechercheBanque = '';
+
+        // NOUVEAU : DONNÉES DU GÉNÉRATEUR D'EXERCICES PAR PROMPT
+        let donneesExoGenereParPrompt = null;
 
         window.basculerOnglet = function(tabId, btn) {
             document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
@@ -475,57 +479,123 @@
             }
         };
 
-        function afficherDerniersDevoirsGlobaux() {
-            const tbody = document.getElementById('table-derniers-devoirs-corps');
-            if (!tbody) return;
-            tbody.innerHTML = "";
-
-            const copies = [...listeAssignations].filter(a => a.statut === "termine" || a.statut === "en_cours");
-            const dixDerniers = copies.slice(0, 10);
-
-            if (dixDerniers.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#64748b;">Aucun devoir récent.</td></tr>`;
-                return;
-            }
-
-            dixDerniers.forEach(a => {
-                const tr = document.createElement('tr');
-                let badgeType = "";
-                let statutInfo = "";
-                let actionBtn = "";
-
-                if (a.typeDevoir === "emma") {
-                    badgeType = `<span class="badge-emma">🤖 Emma IA</span>`;
-                    statutInfo = (a.statut === "termine") ? `<span style="color:var(--success); font-weight:bold;">✅ Terminé</span>` : `<span style="color:var(--accent);">💬 En cours</span>`;
-                    actionBtn = `<button type="button" class="btn btn-sm btn-purple" onclick="voirRetoursEmmaProf('${a.id}')">🔍 Voir l'échange</button>`;
-                } else if (a.typeDevoir === "interactif") {
-                    badgeType = a.estAutoEntrainement ? `<span class="badge-auto">✨ Entraînement</span>` : `<span class="badge-interactif">⚡ Interactif</span>`;
-                    statutInfo = `Score : <strong>${a.score || 0} / ${a.totalQuestions || 0}</strong>`;
-                } else {
-                    badgeType = `<span class="badge-chapitre">📖 Cours + Quiz</span>`;
-                    statutInfo = `Actif`;
-                }
-
-                tr.innerHTML = `
-                    <td><strong style="color:var(--accent); cursor:pointer;" onclick="ouvrirFicheEleveParCode('${a.eleveCode}')">👤 ${a.eleveCode}</strong></td>
-                    <td><strong>${a.devoirTitre}</strong></td>
-                    <td>${badgeType}</td>
-                    <td>${statutInfo}</td>
-                    <td>${actionBtn}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        window.ouvrirFicheEleveParCode = function(code) {
-            const e = listeEleves.find(x => (x.code || '').toUpperCase() === (code || '').toUpperCase());
-            if (e) {
-                basculerOnglet('tab-eleves', document.getElementById('btn-tab-eleves'));
-                ouvrirFicheEleve(e.id);
+        // =========================================================================
+        // NOUVEAU : GÉNÉRATION D'EXERCICE PAR PROMPT PROFESSEUR
+        // =========================================================================
+        window.ajusterFormulairePromptProf = function() {
+            const type = document.querySelector('input[name="type-exo-prompt"]:checked').value;
+            const boxOptions = document.getElementById('box-options-identiques-prompt');
+            if (boxOptions) {
+                boxOptions.style.display = (type === 'select-identique') ? 'block' : 'none';
             }
         };
 
-        // ASSIGNATION MODAL GÉNÉRALE (DEPUIS LA BANQUE)
+        window.genererExerciceParPromptIA = async function() {
+            const promptProf = document.getElementById('input-prompt-exercice').value.trim();
+            const titre = document.getElementById('input-prompt-titre').value.trim() || "Exercice de grammaire";
+            const typeExo = document.querySelector('input[name="type-exo-prompt"]:checked').value;
+            const optionsCommunes = document.getElementById('input-options-communes-prompt').value.trim();
+            const nbPhrases = document.getElementById('select-nb-phrases-prompt').value;
+            const modelChoisi = document.getElementById('select-ia-model-prompt').value;
+
+            const urlApi = document.getElementById('api-url').value.trim();
+            const cleNano = document.getElementById('nanogpt-key-input').value.trim();
+
+            if (!promptProf) return alert("Veuillez entrer une consigne pour l'IA (ex: Crée-moi 10 phrases pour pratiquer le passé composé).");
+
+            const btn = document.getElementById('btn-lancer-prompt-exo');
+            btn.disabled = true;
+            btn.textContent = "⏳ Génération de l'exercice en cours...";
+
+            try {
+                const res = await fetch(urlApi.replace(/\/$/, "") + "/api/generer-exercice-prof", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "x-model-choice": modelChoisi,
+                        "x-nanogpt-key": cleNano
+                    },
+                    body: JSON.stringify({
+                        promptProf: promptProf,
+                        typeExo: typeExo,
+                        optionsCommunes: optionsCommunes,
+                        nbPhrases: nbPhrases,
+                        titre: titre
+                    })
+                });
+
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+
+                donneesExoGenereParPrompt = data;
+                afficherApercuExoGenerePrompt();
+                document.getElementById('card-apercu-exo-prompt').style.display = "block";
+                alert("✅ Exercice généré avec succès ! Vous pouvez le relire ou le modifier ci-dessous avant de l'enregistrer.");
+
+            } catch(e) {
+                alert("Erreur lors de la génération : " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "🪄 Générer les phrases d'exercice";
+            }
+        };
+
+        function afficherApercuExoGenerePrompt() {
+            if (!donneesExoGenereParPrompt) return;
+            const conteneur = document.getElementById('conteneur-lignes-exo-prompt');
+            conteneur.innerHTML = "";
+
+            const phrases = donneesExoGenereParPrompt.phrases || [];
+            phrases.forEach((p, idx) => {
+                const div = document.createElement('div');
+                div.className = "edit-box-item";
+
+                let detailsHtml = "";
+                if (p.type === 'select') {
+                    detailsHtml = `<div>Options : <code>${(p.options || []).join(', ')}</code> | Bonne réponse : <strong style="color:var(--success);">${(p.a || []).join(' / ')}</strong></div>`;
+                } else {
+                    detailsHtml = `<div>Réponse attendue : <strong style="color:var(--success);">${(p.a || []).join(' / ')}</strong></div>`;
+                }
+
+                div.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <strong style="color:var(--primary);">Phrase ${idx + 1}</strong>
+                        <button type="button" class="btn btn-sm btn-danger" onclick="supprimerPhraseExoPrompt(${idx})">🗑️ Supprimer</button>
+                    </div>
+                    <input type="text" value="${p.q || ''}" oninput="donneesExoGenereParPrompt.phrases[${idx}].q = this.value" style="margin-bottom:8px;">
+                    ${detailsHtml}
+                `;
+                conteneur.appendChild(div);
+            });
+        }
+
+        window.supprimerPhraseExoPrompt = function(idx) {
+            if (!donneesExoGenereParPrompt) return;
+            donneesExoGenereParPrompt.phrases.splice(idx, 1);
+            afficherApercuExoGenerePrompt();
+        };
+
+        window.sauvegarderExoPromptDansBanque = async function() {
+            if (!donneesExoGenereParPrompt || (donneesExoGenereParPrompt.phrases || []).length === 0) {
+                return alert("Aucune phrase à enregistrer.");
+            }
+
+            const titreFinal = document.getElementById('input-prompt-titre').value.trim() || donneesExoGenereParPrompt.titre;
+
+            await db.collection("devoirs").add({
+                titre: titreFinal,
+                typeDevoir: "interactif",
+                phrases: donneesExoGenereParPrompt.phrases,
+                dateCreation: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            alert(`✅ "${titreFinal}" a été enregistré dans votre Banque de devoirs !`);
+            document.getElementById('card-apercu-exo-prompt').style.display = "none";
+            document.getElementById('input-prompt-exercice').value = "";
+            basculerOnglet('tab-devoirs', document.getElementById('btn-tab-devoirs'));
+        };
+
+        // ASSIGNATION
         window.ouvrirModalAssignation = function(devoirId) {
             devoirAAssigner = devoirsMap[devoirId];
             if (!devoirAAssigner) return;
@@ -741,9 +811,7 @@
             basculerOnglet('tab-devoirs', document.getElementById('btn-tab-devoirs'));
         };
 
-        // ==========================================
-        // ANALYSE PDF & LISTE DYNAMIQUE DES MODÈLES (STYLE SILLYTAVERN)
-        // ==========================================
+        // ACTUALISER MODÈLES NANOGPT
         window.actualiserModelesNanoGPT = async function() {
             const urlApi = document.getElementById('api-url').value.trim();
             const cleNano = document.getElementById('nanogpt-key-input').value.trim();
@@ -751,7 +819,7 @@
 
             const btn = document.getElementById('btn-refresh-models');
             btn.disabled = true;
-            btn.textContent = "⏳ Connexion...";
+            btn.textContent = "⏳...";
 
             try {
                 const res = await fetch(urlApi.replace(/\/$/, "") + "/api/nanogpt-models", {
@@ -761,48 +829,49 @@
                 const data = await res.json();
                 if (data.error) throw new Error(data.error);
 
-                const select = document.getElementById('select-ia-model');
-                select.innerHTML = "";
+                const selects = [document.getElementById('select-ia-model'), document.getElementById('select-ia-model-prompt')];
+                selects.forEach(select => {
+                    if (!select) return;
+                    select.innerHTML = "";
 
-                // Ajouter les modèles standards recommandés en haut
-                const optGroupe = document.createElement('optgroup');
-                optGroupe.label = "⭐ Modèles Recommandés";
+                    const optGroupe = document.createElement('optgroup');
+                    optGroupe.label = "⭐ Modèles Recommandés";
 
-                const modelesStars = [
-                    "deepseek/deepseek-v4.1-flash:thinking",
-                    "qwen/qwen3-235b-a22b-thinking-2507",
-                    "gemini-3.8-flash"
-                ];
+                    const modelesStars = [
+                        "deepseek/deepseek-v4.1-flash:thinking",
+                        "qwen/qwen3-235b-a22b-thinking-2507",
+                        "gemini-3.8-flash"
+                    ];
 
-                modelesStars.forEach(m => {
-                    const opt = document.createElement('option');
-                    opt.value = m;
-                    opt.textContent = m;
-                    optGroupe.appendChild(opt);
-                });
-                select.appendChild(optGroupe);
-
-                // Ajouter tous les autres modèles NanoGPT retournés par l'API
-                const optAutres = document.createElement('optgroup');
-                optAutres.label = `🌐 Tous les modèles NanoGPT (${data.models.length})`;
-
-                data.models.forEach(m => {
-                    if (!modelesStars.includes(m)) {
+                    modelesStars.forEach(m => {
                         const opt = document.createElement('option');
                         opt.value = m;
                         opt.textContent = m;
-                        optAutres.appendChild(opt);
-                    }
-                });
-                select.appendChild(optAutres);
+                        optGroupe.appendChild(opt);
+                    });
+                    select.appendChild(optGroupe);
 
-                alert(`✅ ${data.models.length} modèles NanoGPT récupérés avec succès ! Vous pouvez maintenant choisir n'importe quel nouveau modèle.`);
+                    const optAutres = document.createElement('optgroup');
+                    optAutres.label = `🌐 Tous les modèles NanoGPT (${data.models.length})`;
+
+                    data.models.forEach(m => {
+                        if (!modelesStars.includes(m)) {
+                            const opt = document.createElement('option');
+                            opt.value = m;
+                            opt.textContent = m;
+                            optAutres.appendChild(opt);
+                        }
+                    });
+                    select.appendChild(optAutres);
+                });
+
+                alert(`✅ ${data.models.length} modèles NanoGPT récupérés avec succès !`);
 
             } catch(e) {
                 alert("Erreur lors de la récupération des modèles : " + e.message);
             } finally {
                 btn.disabled = false;
-                btn.textContent = "🔄 Actualiser la liste des modèles NanoGPT";
+                btn.textContent = "🔄";
             }
         };
 
@@ -1340,6 +1409,7 @@
 
     <div class="tabs">
         <button type="button" class="tab-btn active" id="btn-tab-eleves" onclick="basculerOnglet('tab-eleves', this)">👥 Élèves & Suivi</button>
+        <button type="button" class="tab-btn" id="btn-tab-prompt-exo" onclick="basculerOnglet('tab-prompt-exo', this)">🪄 Créer un Exercice par Prompt IA</button>
         <button type="button" class="tab-btn" id="btn-tab-emma" onclick="basculerOnglet('tab-emma', this)">🤖 Créer un Exercice IA (Emma)</button>
         <button type="button" class="tab-btn" id="btn-tab-creer-manuel" onclick="basculerOnglet('tab-creer-manuel', this)">⚡ Devoir Interactif (Copier-coller)</button>
         <button type="button" class="tab-btn" id="btn-tab-pdf" onclick="basculerOnglet('tab-pdf', this)">📄 Importer depuis un PDF (IA)</button>
@@ -1457,7 +1527,87 @@
 
     </div>
 
-    <!-- ONGLET 2 : CRÉER UN EXERCICE IA (EMMA) -->
+    <!-- NOUVEL ONGLET : CRÉER UN EXERCICE PAR PROMPT IA -->
+    <div id="tab-prompt-exo" class="tab-pane" style="display:none;">
+        <div class="card">
+            <h2>🪄 Créer un Exercice Interactif par Prompt IA</h2>
+            <p style="color:#64748b;">Décrivez simplement ce que vous souhaitez que vos élèves pratiquent. L'IA générera automatiquement les phrases, les options ou les réponses attendues.</p>
+
+            <label for="input-prompt-titre">1. Titre du devoir :</label>
+            <input type="text" id="input-prompt-titre" placeholder="Ex: Pratique Passé Composé vs Imparfait">
+
+            <label for="input-prompt-exercice">2. Votre consigne pour l'IA (Prompt) :</label>
+            <textarea id="input-prompt-exercice" rows="3" placeholder="Ex: Crée-moi des phrases de niveau A2 pour pratiquer l'emploi du passé composé ou de l'imparfait dans des récits quotidiens."></textarea>
+
+            <label style="margin-top:15px;">3. Type de réponses attendues :</label>
+            <div style="display:flex; flex-direction:column; gap:10px; margin-top:8px;">
+                <label style="font-weight:normal; cursor:pointer;">
+                    <input type="radio" name="type-exo-prompt" value="select-identique" checked onchange="ajusterFormulairePromptProf()"> 
+                    <strong>Choix identiques</strong> (Menu déroulant avec les mêmes options pour toutes les phrases)
+                </label>
+                <div id="box-options-identiques-prompt" style="margin-left:25px; margin-bottom:5px;">
+                    <input type="text" id="input-options-communes-prompt" value="passé composé, imparfait" placeholder="Options séparées par une virgule (ex: à, de, en ou passé composé, imparfait)">
+                </div>
+
+                <label style="font-weight:normal; cursor:pointer;">
+                    <input type="radio" name="type-exo-prompt" value="select-variable" onchange="ajusterFormulairePromptProf()"> 
+                    <strong>Choix variables par phrase</strong> (QCM où l'IA propose 3 ou 4 choix adaptés à chaque phrase)
+                </label>
+
+                <label style="font-weight:normal; cursor:pointer;">
+                    <input type="radio" name="type-exo-prompt" value="input-texte-trou" onchange="ajusterFormulairePromptProf()"> 
+                    <strong>Saisie texte libre sur un trou</strong> (L'élève écrit au clavier le mot manquant dans le trou)
+                </label>
+
+                <label style="font-weight:normal; cursor:pointer;">
+                    <input type="radio" name="type-exo-prompt" value="input-phrase-complete" onchange="ajusterFormulairePromptProf()"> 
+                    <strong>Saisie de la phrase complète</strong> (L'élève doit réécrire ou traduire la phrase entière sans faute)
+                </label>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-top:15px;">
+                <div>
+                    <label>Nombre de phrases :</label>
+                    <select id="select-nb-phrases-prompt">
+                        <option value="5">5 phrases</option>
+                        <option value="10" selected>10 phrases</option>
+                        <option value="15">15 phrases</option>
+                        <option value="20">20 phrases</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Modèle IA :</label>
+                    <select id="select-ia-model-prompt">
+                        <option value="deepseek/deepseek-v4.1-flash:thinking" selected>deepseek/deepseek-v4.1-flash:thinking</option>
+                        <option value="qwen/qwen3-235b-a22b-thinking-2507">qwen/qwen3-235b-a22b-thinking-2507</option>
+                        <option value="gemini-3.5-flash-lite">gemini-3.5-flash-lite (Ultra rapide)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="margin-top:25px;">
+                <button type="button" class="btn btn-purple" id="btn-lancer-prompt-exo" onclick="genererExerciceParPromptIA()">
+                    🪄 Générer les phrases d'exercice
+                </button>
+            </div>
+        </div>
+
+        <!-- ZONE D'APERÇU ET DE RETOUCHE DE L'EXERCICE GÉNÉRÉ -->
+        <div class="card" id="card-apercu-exo-prompt" style="display:none;">
+            <h2>📖 Aperçu et Retouche des phrases générées</h2>
+            <p style="color:#64748b;">Vous pouvez modifier directement les phrases ou supprimer celles qui ne vous conviennent pas :</p>
+            
+            <div id="conteneur-lignes-exo-prompt"></div>
+
+            <div style="margin-top:20px; display:flex; justify-content:flex-end;">
+                <button type="button" class="btn btn-success" style="font-size:1.1em; padding:12px 24px;" onclick="sauvegarderExoPromptDansBanque()">
+                    💾 Sauvegarder cet exercice dans ma Banque
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ONGLET 3 : CRÉER UN EXERCICE IA (EMMA) -->
     <div id="tab-emma" class="tab-pane" style="display:none;">
         <div class="card">
             <h2>🤖 Créer un Exercice IA avec Emma (Flash Lite - 500 req/j)</h2>
@@ -1479,7 +1629,7 @@
         </div>
     </div>
 
-    <!-- ONGLET 3 : CRÉER UN DEVOIR INTERACTIF RAPIDE -->
+    <!-- ONGLET 4 : CRÉER UN DEVOIR INTERACTIF RAPIDE -->
     <div id="tab-creer-manuel" class="tab-pane" style="display:none;">
         <div class="card">
             <h2>⚡ Créer un Devoir Interactif (Validation immédiate)</h2>
@@ -1507,7 +1657,7 @@
         </div>
     </div>
 
-    <!-- ONGLET 4 : IMPORT PDF & ÉDITEUR MANUEL -->
+    <!-- ONGLET 5 : IMPORT PDF & ÉDITEUR MANUEL -->
     <div id="tab-pdf" class="tab-pane" style="display:none;">
         <div class="card">
             <h2>📄 Importer un Cours & Exercices depuis un PDF</h2>
@@ -1580,7 +1730,7 @@
         </div>
     </div>
 
-    <!-- ONGLET 5 : BANQUE DE DEVOIRS AVEC RECHERCHE ET FILTRES -->
+    <!-- ONGLET 6 : BANQUE DE DEVOIRS AVEC RECHERCHE ET FILTRES -->
     <div id="tab-devoirs" class="tab-pane" style="display:none;">
         <div class="card">
             <h2>📚 Banque de Devoirs disponibles</h2>
