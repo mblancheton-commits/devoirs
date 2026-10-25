@@ -52,7 +52,9 @@
         .badge-chapitre { background: #e0e7ff; color: #3730a3; padding: 3px 8px; border-radius: 6px; font-weight: bold; font-size: 0.85em; }
         .badge-emma { background: #fae8ff; color: #86198f; padding: 3px 8px; border-radius: 6px; font-weight: bold; font-size: 0.85em; }
         .badge-auto { background: #dbeafe; color: #1e40af; padding: 3px 8px; border-radius: 6px; font-weight: bold; font-size: 0.85em; }
+        .badge-delf { background: #fdf2f8; color: #be185d; border: 1px solid #fbcfe8; padding: 2px 7px; border-radius: 6px; font-size: 0.8em; font-weight: bold; margin-left: 5px; }
 
+        /* MODALES SÉCURISÉES */
         .modal { 
             display: none; 
             position: fixed; 
@@ -99,7 +101,6 @@
         .apercu-section { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px; margin-bottom: 20px; }
         .apercu-section h3 { margin-top: 0; color: var(--primary); font-size: 1.15em; border-bottom: 1px dashed #cbd5e0; padding-bottom: 8px; }
         .quiz-item-apercu { background: white; border: 1px solid #cbd5e0; border-radius: 8px; padding: 14px; margin-bottom: 12px; }
-
         .box-retouche-ia { background: #faf5ff; border: 2px solid #e9d5ff; border-radius: 12px; padding: 20px; margin-top: 25px; }
         .edit-box-item { background: white; border: 1px solid #cbd5e0; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
 
@@ -124,7 +125,7 @@
             db = firebase.firestore();
         } catch(e) { console.error("Firebase init:", e); }
 
-        const questionsBanqueEmma = [
+        const questionsBanqueEmmaStandard = [
             "Bonjour ! Quel est ton MBTI ?",
             "Bonjour ! Qu'est-ce que tu vas faire ce week-end ?",
             "Bonjour ! Quel est ton plat préféré ? 🍝",
@@ -157,6 +158,19 @@
             "Bonjour ! Quelle est ta spécialité en cuisine ? 👨‍🍳"
         ];
 
+        const sujetsDelfB1B2 = [
+            "Que penses-tu de l'impact des réseaux sociaux sur les jeunes aujourd'hui ?",
+            "Penses-tu que le télétravail est une bonne chose pour la vie de famille ?",
+            "Faut-il interdire les téléphones portables dans les écoles d'après toi ?",
+            "Crois-tu que l'intelligence artificielle représente une menace pour l'emploi ?",
+            "Est-il nécessaire de voyager loin pour passer de bonnes vacances ?",
+            "Penses-tu que les fast-foods devraient être davantage taxés pour la santé publique ?",
+            "La protection de l'environnement est-elle l'affaire des citoyens ou des gouvernements ?",
+            "Préfères-tu vivre dans une grande métropole ou dans un village à la campagne ?",
+            "Penses-tu que les notes à l'école sont utiles pour motiver les élèves ?",
+            "Faut-il encourager les gens à acheter des produits locaux même s'ils sont plus chers ?"
+        ];
+
         let listeEleves = [];
         let listeDevoirs = [];
         let listeAssignations = [];
@@ -176,8 +190,6 @@
 
         let filtreTypeBanqueActif = 'tous';
         let texteRechercheBanque = '';
-
-        // NOUVEAU : DONNÉES DU GÉNÉRATEUR D'EXERCICES PAR PROMPT
         let donneesExoGenereParPrompt = null;
 
         window.basculerOnglet = function(tabId, btn) {
@@ -333,7 +345,7 @@
                 let btnAction = "";
 
                 if (a.typeDevoir === "emma") {
-                    badgeType = `<span class="badge-emma">🤖 Emma IA</span>`;
+                    badgeType = `<span class="badge-emma">🤖 Emma IA</span> ${a.modeDelf ? '<span class="badge-delf">🎓 DELF</span>' : ''}`;
                     const nb = Object.keys(a.retoursEmma || {}).length;
                     const tot = (a.questions || []).length;
                     prog = `${nb} / ${tot} questions répondues`;
@@ -361,7 +373,7 @@
             });
         }
 
-        // ASSIGNATION DIRECTE DANS LA FICHE DE L'ÉLÈVE
+        // ASSIGNATION DIRECTE DEPUIS LA FICHE ÉLÈVE
         window.ouvrirModalAssignerADirectionEleve = function() {
             if (!eleveSelectionne) return;
 
@@ -384,7 +396,7 @@
             devoirs.forEach(d => {
                 const div = document.createElement('div');
                 div.className = "item-coche-eleve";
-                let typeBadge = (d.typeDevoir === 'emma') ? '🤖 Emma' : (d.typeDevoir === 'interactif' ? '⚡ Interactif' : '📖 Cours');
+                let typeBadge = (d.typeDevoir === 'emma') ? (d.modeDelf ? '🎓 Emma DELF' : '🤖 Emma') : (d.typeDevoir === 'interactif' ? '⚡ Interactif' : '📖 Cours');
                 div.innerHTML = `
                     <input type="checkbox" id="chk-devoir-${d.id}" value="${d.id}" class="chk-assign-devoir-item">
                     <label for="chk-devoir-${d.id}">
@@ -430,6 +442,7 @@
                             devoirId: d.id,
                             devoirTitre: d.titre,
                             typeDevoir: "emma",
+                            modeDelf: d.modeDelf || false,
                             questions: d.questions || [],
                             statut: "non_commence",
                             retoursEmma: {},
@@ -479,9 +492,9 @@
             }
         };
 
-        // =========================================================================
-        // NOUVEAU : GÉNÉRATION D'EXERCICE PAR PROMPT PROFESSEUR
-        // =========================================================================
+        // ==========================================
+        // PROMPT PROFESSEUR EXERCICE
+        // ==========================================
         window.ajusterFormulairePromptProf = function() {
             const type = document.querySelector('input[name="type-exo-prompt"]:checked').value;
             const boxOptions = document.getElementById('box-options-identiques-prompt');
@@ -501,11 +514,11 @@
             const urlApi = document.getElementById('api-url').value.trim();
             const cleNano = document.getElementById('nanogpt-key-input').value.trim();
 
-            if (!promptProf) return alert("Veuillez entrer une consigne pour l'IA (ex: Crée-moi 10 phrases pour pratiquer le passé composé).");
+            if (!promptProf) return alert("Veuillez entrer une consigne pour l'IA.");
 
             const btn = document.getElementById('btn-lancer-prompt-exo');
             btn.disabled = true;
-            btn.textContent = "⏳ Génération de l'exercice en cours...";
+            btn.textContent = "⏳ Génération en cours...";
 
             try {
                 const res = await fetch(urlApi.replace(/\/$/, "") + "/api/generer-exercice-prof", {
@@ -530,7 +543,7 @@
                 donneesExoGenereParPrompt = data;
                 afficherApercuExoGenerePrompt();
                 document.getElementById('card-apercu-exo-prompt').style.display = "block";
-                alert("✅ Exercice généré avec succès ! Vous pouvez le relire ou le modifier ci-dessous avant de l'enregistrer.");
+                alert("✅ Exercice généré avec succès !");
 
             } catch(e) {
                 alert("Erreur lors de la génération : " + e.message);
@@ -595,7 +608,7 @@
             basculerOnglet('tab-devoirs', document.getElementById('btn-tab-devoirs'));
         };
 
-        // ASSIGNATION
+        // ASSIGNATION MODAL GÉNÉRALE (DEPUIS LA BANQUE)
         window.ouvrirModalAssignation = function(devoirId) {
             devoirAAssigner = devoirsMap[devoirId];
             if (!devoirAAssigner) return;
@@ -669,6 +682,7 @@
                             devoirId: devoirAAssigner.id,
                             devoirTitre: devoirAAssigner.titre,
                             typeDevoir: "emma",
+                            modeDelf: devoirAAssigner.modeDelf || false,
                             questions: devoirAAssigner.questions || [],
                             statut: "non_commence",
                             retoursEmma: {},
@@ -751,25 +765,37 @@
         };
 
         window.piocherQuestionsEmma = function() {
-            const melange = [...questionsBanqueEmma].sort(() => 0.5 - Math.random());
+            const melange = [...questionsBanqueEmmaStandard].sort(() => 0.5 - Math.random());
             document.getElementById('questions-emma-texte').value = melange.slice(0, 10).join('\n');
+            document.getElementById('check-mode-delf').checked = false;
+        };
+
+        // NOUVEAU : PIOCHER SUJETS DELF B1/B2
+        window.piocherQuestionsDelf = function() {
+            const melange = [...sujetsDelfB1B2].sort(() => 0.5 - Math.random());
+            document.getElementById('questions-emma-texte').value = melange.slice(0, 10).join('\n');
+            document.getElementById('check-mode-delf').checked = true;
         };
 
         window.enregistrerDevoirEmma = async function() {
             const titre = document.getElementById('titre-emma').value.trim();
             const lignes = document.getElementById('questions-emma-texte').value.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            const estModeDelf = document.getElementById('check-mode-delf').checked;
+
             if (!titre || lignes.length === 0) return alert("Indiquez un titre et des questions.");
 
             await db.collection("devoirs").add({
                 titre: titre,
                 typeDevoir: "emma",
+                modeDelf: estModeDelf,
                 questions: lignes,
                 dateCreation: firebase.firestore.FieldValue.serverTimestamp()
             });
 
-            alert("✅ Exercice IA avec Emma enregistré !");
+            alert(`✅ Exercice IA avec Emma (${estModeDelf ? 'Mode DELF B1/B2' : 'Standard'}) enregistré !`);
             document.getElementById('titre-emma').value = "";
             document.getElementById('questions-emma-texte').value = "";
+            document.getElementById('check-mode-delf').checked = false;
             basculerOnglet('tab-devoirs', document.getElementById('btn-tab-devoirs'));
         };
 
@@ -1270,6 +1296,17 @@
                              ➡️ <strong>Corrigé</strong> : <strong style="color:var(--success);">${r.phrase_corrigee}</strong><br>`;
                     if (r.traduction_phrase_corrigee) html += `🌐 <em>Traduction corrigé</em> : ${r.traduction_phrase_corrigee}<br>`;
                     html += `💡 <strong>Améliorations</strong> : ${r.ameliorations}`;
+
+                    // NOUVEAU : AFFICHAGE DE L'ARGUMENT DELF DANS LE SUIVI PROF
+                    if (r.argument_delf) {
+                        html += `
+                            <div style="margin-top:10px; background:#faf5ff; border:1px solid #c084fc; border-radius:6px; padding:10px;">
+                                <strong style="color:#6b21a8;">🗣️ Suggestion d'argument (DELF) :</strong><br>
+                                "${r.argument_delf}"<br>
+                                ${r.traduction_argument_delf ? `<small style="color:#64748b;">🌐 ${r.traduction_argument_delf}</small>` : ''}
+                            </div>
+                        `;
+                    }
                 } else {
                     html += `<span style="color:#aaa;">(Pas encore répondu)</span>`;
                 }
@@ -1331,8 +1368,8 @@
                 let boutonsHtml = "";
 
                 if (d.typeDevoir === "emma") {
-                    badge = `<span class="badge-emma">🤖 Emma IA</span>`;
-                    info = `${(d.questions || []).length} questions conversationnelles`;
+                    badge = `<span class="badge-emma">🤖 Emma IA</span> ${d.modeDelf ? '<span class="badge-delf">🎓 DELF</span>' : ''}`;
+                    info = `${(d.questions || []).length} questions ${d.modeDelf ? 'd\'argumentation' : 'conversationnelles'}`;
                     boutonsHtml = `
                         <button type="button" class="btn btn-sm btn-success" onclick="ouvrirModalAssignation('${d.id}')">➕ Assigner</button>
                         <button type="button" class="btn btn-sm btn-danger" onclick="supprimerDevoir('${d.id}')">🗑️</button>
@@ -1546,7 +1583,7 @@
                     <strong>Choix identiques</strong> (Menu déroulant avec les mêmes options pour toutes les phrases)
                 </label>
                 <div id="box-options-identiques-prompt" style="margin-left:25px; margin-bottom:5px;">
-                    <input type="text" id="input-options-communes-prompt" value="passé composé, imparfait" placeholder="Options séparées par une virgule (ex: à, de, en ou passé composé, imparfait)">
+                    <input type="text" id="input-options-communes-prompt" value="passé composé, imparfait" placeholder="Options séparées par une virgule">
                 </div>
 
                 <label style="font-weight:normal; cursor:pointer;">
@@ -1592,7 +1629,6 @@
             </div>
         </div>
 
-        <!-- ZONE D'APERÇU ET DE RETOUCHE DE L'EXERCICE GÉNÉRÉ -->
         <div class="card" id="card-apercu-exo-prompt" style="display:none;">
             <h2>📖 Aperçu et Retouche des phrases générées</h2>
             <p style="color:#64748b;">Vous pouvez modifier directement les phrases ou supprimer celles qui ne vous conviennent pas :</p>
@@ -1607,21 +1643,35 @@
         </div>
     </div>
 
-    <!-- ONGLET 3 : CRÉER UN EXERCICE IA (EMMA) -->
+    <!-- ONGLET 3 : CRÉER UN EXERCICE IA (EMMA) AVEC OPTION DELF B1/B2 -->
     <div id="tab-emma" class="tab-pane" style="display:none;">
         <div class="card">
             <h2>🤖 Créer un Exercice IA avec Emma (Flash Lite - 500 req/j)</h2>
-            <p style="color:#64748b;">Emma tourne exclusivement sur les modèles <strong>Flash Lite (3.5 Lite / 3.1 Lite)</strong> avec un quota de <strong>500 requêtes gratuites par jour</strong>.</p>
+            <p style="color:#64748b;">Emma corrige les phrases des élèves et peut les entraîner à l'oral et à l'argumentation.</p>
 
             <label for="titre-emma">1. Titre de l'exercice :</label>
-            <input type="text" id="titre-emma" placeholder="Ex: Discussion avec Emma : Mes goûts et loisirs">
+            <input type="text" id="titre-emma" placeholder="Ex: Entraînement Oral DELF B1 : Les Réseaux Sociaux">
 
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
+            <!-- OPTION DELF B1/B2 -->
+            <div style="background:#faf5ff; border:2px dashed #c084fc; padding:14px; border-radius:10px; margin:15px 0;">
+                <label style="margin:0; cursor:pointer; display:flex; align-items:center; gap:10px; color:#581c87; font-size:1.05em;">
+                    <input type="checkbox" id="check-mode-delf" style="width:20px; height:20px; cursor:pointer;">
+                    <strong>🎓 Mode DELF B1/B2 (Entraînement à l'oral & argumentation)</strong>
+                </label>
+                <p style="margin:6px 0 0 30px; font-size:0.9em; color:#6b21a8;">
+                    Si cette case est cochée, Emma suggérera un <strong>nouvel argument ou contre-argument enrichi</strong> pour chaque réponse de l'élève.
+                </p>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:15px; flex-wrap:wrap; gap:8px;">
                 <label style="margin:0;">2. Questions posées par Emma (une par ligne) :</label>
-                <button type="button" class="btn btn-sm btn-purple" onclick="piocherQuestionsEmma()">🎲 Piocher 10 questions d'Emma</button>
+                <div style="display:flex; gap:8px;">
+                    <button type="button" class="btn btn-sm btn-purple" onclick="piocherQuestionsEmma()">🎲 10 Questions FLE A2</button>
+                    <button type="button" class="btn btn-sm btn-success" onclick="piocherQuestionsDelf()">🎓 10 Sujets DELF B1/B2</button>
+                </div>
             </div>
             
-            <textarea id="questions-emma-texte" rows="10" placeholder="Bonjour ! Qu'est-ce que tu as mangé ce midi ?&#10;Bonjour ! Quelle est ta ville préférée ?&#10;Bonjour ! Tu préfères l'été ou l'hiver ?"></textarea>
+            <textarea id="questions-emma-texte" rows="10" placeholder="Bonjour ! Que penses-tu de l'impact des réseaux sociaux sur les jeunes ?&#10;Bonjour ! Est-ce que le télétravail est une bonne chose d'après toi ?"></textarea>
 
             <div style="margin-top:20px;">
                 <button type="button" class="btn btn-success" onclick="enregistrerDevoirEmma()">💾 Enregistrer cet Exercice IA dans ma Banque</button>
@@ -1821,7 +1871,7 @@
     </div>
 </div>
 
-<!-- 4. MODALE RETOURS EMMA PROF -->
+<!-- 4. MODALE RETOURS EMMA PROF (AVEC ARGUMENT DELF) -->
 <div class="modal" id="modal-fautes">
     <div class="modal-content">
         <h2 id="modal-titre" style="margin-top:0; color:var(--primary);">-</h2>
