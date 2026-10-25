@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon Espace Français</title>
+    
+    <!-- CSS Déporté -->
+    <link rel="stylesheet" href="css/eleve.css">
+
+    <!-- SDK Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+    <!-- Scripts Déportés (l'ordre d'inclusion importe) -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/donnees-eleve.js"></script>
+    <script src="js/eleve.js"></script>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- 0. CHOIX LANGUE -->
+    <div id="ecran-langue">
+        <h1 id="txt-select-lang">Choisissez votre langue</h1>
+        <div class="lang-grid">
+            <div class="lang-card" onclick="choisirLangue('fr')">
+                <svg class="flag-svg" viewBox="0 0 900 600"><rect width="300" height="600" fill="#002395"/><rect x="300" width="300" height="600" fill="#fff"/><rect x="600" width="300" height="600" fill="#ed2939"/></svg>
+                <span class="lang-title">Français</span>
+            </div>
+            <div class="lang-card" onclick="choisirLangue('ko')">
+                <svg class="flag-svg" viewBox="0 0 900 600"><rect width="900" height="600" fill="#fff"/><circle cx="450" cy="300" r="150" fill="#cd2e3a"/><path d="M 300,300 A 75,75 0 0,0 450,300 A 75,75 0 0,1 600,300 A 150,150 0 0,1 300,300 Z" fill="#0047a0"/><circle cx="375" cy="300" r="75" fill="#cd2e3a"/></svg>
+                <span class="lang-title">한국어</span>
+            </div>
+            <div class="lang-card" onclick="choisirLangue('en')">
+                <svg class="flag-svg" viewBox="0 0 60 30"><clipPath id="uk-flag"><path d="M30,15 h30 v15 z M30,15 v15 h-30 z M30,15 h-30 v-15 z M30,15 v-15 h30 z"/></clipPath><path d="M0,0 v30 h60 v-30 z" fill="#012169"/><path d="M0,0 L60,30 M60,0 L0,30" stroke="#fff" stroke-width="6"/><path d="M0,0 L60,30 M60,0 L0,30" clip-path="url(#uk-flag)" stroke="#c8102e" stroke-width="4"/><path d="M30,0 v30 M0,15 h60" stroke="#fff" stroke-width="10"/><path d="M30,0 v30 M0,15 h60" stroke="#c8102e" stroke-width="6"/></svg>
+                <span class="lang-title">English</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. CONNEXION -->
+    <div id="ecran-login">
+        <h1 id="txt-login-title">👋 Espace Français</h1>
+        <p id="txt-login-desc" style="color:#64748b;">Entrez votre code élève pour accéder à vos devoirs :</p>
+        <input type="text" id="code-input" placeholder="EX: LUCAS01" autocomplete="off">
+        <button type="button" class="btn btn-full" id="btn-login" onclick="seConnecter()">Ouvrir mes devoirs</button>
+        <div style="margin-top:15px;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="retourChoixLangue()">🌐 Langue / 언어 / Language</button>
+        </div>
+    </div>
+
+    <!-- 1.5 BIENVENUE -->
+    <div id="ecran-bienvenue">
+        <h1 id="txt-welcome-heading">Bienvenue !</h1>
+        <div class="welcome-user-box" id="bienvenue-nom-user">-</div>
+        
+        <div class="severe-mode-card" onclick="toggleSevereMode()">
+            <input type="checkbox" id="check-severe-mode" onclick="event.stopPropagation()">
+            <label for="check-severe-mode" id="txt-severe-mode" style="cursor:pointer; font-weight:600; color:#b91c1c;">
+                Mode sévère 😈 (Taquineries & écran rouge en cas d'erreur)
+            </label>
+        </div>
+
+        <button type="button" class="btn btn-full btn-success" id="btn-continue-welcome" onclick="validerBienvenue()">Accéder à mes devoirs ▶</button>
+    </div>
+
+    <!-- EN-TÊTE ÉLÈVE CONNECTÉ -->
+    <div id="header-eleve">
+        <div class="info-profil"><span id="txt-logged-as">Élève :</span> <strong id="affichage-code-eleve" style="color:var(--accent);">-</strong></div>
+        <div style="display:flex; gap:8px;">
+            <button type="button" class="btn btn-secondary" onclick="retourChoixLangue()">🌐</button>
+            <button type="button" class="btn btn-secondary" id="btn-logout" onclick="deconnexion()">Changer de compte</button>
+        </div>
+    </div>
+
+    <!-- 2. TABLEAU DE BORD (ONGLETS À FAIRE / FAITS) -->
+    <div id="ecran-tableau-de-bord">
+        <div class="tabs-nav">
+            <button type="button" class="tab-btn active" id="btn-tab-afaire" onclick="changerOnglet('afaire')">
+                <span id="txt-tab-afaire">⏳ À faire</span> <span class="tab-badge" id="badge-nb-afaire">0</span>
+            </button>
+            <button type="button" class="tab-btn" id="btn-tab-faits" onclick="changerOnglet('faits')">
+                <span id="txt-tab-faits">🏆 Faits / Terminés</span> <span class="tab-badge" id="badge-nb-faits">0</span>
+            </button>
+        </div>
+        <div id="panel-afaire" class="tab-panel active"><div id="conteneur-afaire"></div></div>
+        <div id="panel-faits" class="tab-panel"><div id="conteneur-faits"></div></div>
+    </div>
+
+    <!-- 3. VUE EXERCICE IA EMMA -->
+    <div id="vue-emma-ia">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <button type="button" class="btn btn-secondary" onclick="retourTableauPrincipal()">← <span id="txt-retour-devoirs">Retour aux devoirs</span></button>
+            <h2 id="emma-titre" style="margin:0; color:var(--purple);">-</h2>
+            <div></div>
+        </div>
+
+        <div class="emma-header-card">
+            <div class="emma-avatar">👧</div>
+            <div>
+                <h3 style="margin:0; color:#581c87;">Emma</h3>
+                <p id="emma-description" style="margin:4px 0 0 0; color:#6b21a8; font-size:0.95em;">Ton amie française bienveillante. Réponds à ses questions et elle corrigera tes phrases en détail !</p>
+            </div>
+        </div>
+
+        <div id="emma-questions-conteneur"></div>
+
+        <div style="text-align:center; margin-top:30px; background:white; padding:20px; border-radius:12px;">
+            <button type="button" class="btn btn-success" style="font-size:1.1em; padding:12px 28px;" onclick="marquerEmmaTermine()">
+                ✅ <span id="txt-terminer-emma">Terminer cette discussion avec Emma</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 4. VUE EXERCICE INTERACTIF RAPIDE -->
+    <div id="vue-exo-interactif">
+        <div style="background:white; padding:15px 20px; border-radius:10px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <div>
+                <button type="button" class="btn btn-secondary" onclick="retourTableauPrincipal()">← Retour</button>
+                <h2 id="interactif-titre" style="margin:8px 0 0 0; color:var(--primary); font-size:1.3em;">-</h2>
+            </div>
+            <div style="text-align:right;">
+                <div style="font-weight:bold; color:var(--success); font-size:1.2em;"><span id="txt-score-label">Score :</span> <span id="interactif-score">0</span> / <span id="interactif-total">0</span></div>
+                <div style="font-size:0.9em; color:var(--danger); font-weight:bold;"><span id="txt-errors-label">Erreurs :</span> <span id="interactif-erreurs">0</span></div>
+            </div>
+        </div>
+
+        <div id="interactif-phrases-conteneur"></div>
+
+        <div style="text-align:center; margin-top:30px; background:white; padding:20px; border-radius:10px;">
+            <button type="button" class="btn btn-success" id="btn-submit-interactif" style="font-size:1.1em; padding:12px 28px;" onclick="terminerDevoirInteractif()">
+                💾 Sauvegarder et terminer le devoir
+            </button>
+        </div>
+    </div>
+
+    <!-- 5. VUE CHAPITRE PAR BLOCS -->
+    <div id="vue-chapitre-blocs">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <button type="button" class="btn btn-secondary" onclick="retourTableauPrincipal()">← Retour aux devoirs</button>
+            <h2 id="chapitre-titre" style="margin:0; color:var(--primary);">-</h2>
+            <div></div>
+        </div>
+
+        <p style="color:#64748b; margin-bottom:15px;">Suivez les modules dans l'ordre pour bien assimiler la leçon :</p>
+        <div id="chapitre-liste-blocs"></div>
+    </div>
+
+    <!-- 5.B CONTENU DU BLOC EN COURS -->
+    <div id="vue-contenu-bloc-chapitre">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+            <button type="button" class="btn btn-secondary" onclick="retourMenuBlocs()">← Retour au menu du cours</button>
+            <h2 id="chapitre-bloc-actif-titre" style="margin:0; color:var(--primary); font-size:1.25em;">-</h2>
+            <div></div>
+        </div>
+
+        <!-- ZONE 1 : COURS -->
+        <div id="chapitre-zone-cours" style="display:none;">
+            <div class="cours-slide-container">
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #f1f5f9; padding-bottom:14px; margin-bottom:20px;">
+                    <h3 id="cours-slide-titre" style="margin:0; color:#1e3a8a; font-size:1.3em;">-</h3>
+                    <span id="cours-slide-compteur" style="background:#eff6ff; color:#1d4ed8; padding:4px 12px; border-radius:20px; font-weight:bold; font-size:0.95em;">Fiche 1 / 1</span>
+                </div>
+                
+                <div id="cours-slide-contenu" style="white-space:pre-wrap; min-height:160px; font-size:1.1em; line-height:1.9;"></div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:30px; padding-top:20px; border-top:1px solid #e2e8f0; flex-wrap:wrap; gap:10px;">
+                    <button type="button" class="btn btn-secondary" id="btn-slide-prec" onclick="naviguerSlideCours(-1)">◀ Fiche précédente</button>
+                    <button type="button" class="btn btn-success" onclick="validerLectureCours()">✅ J'ai lu ce cours</button>
+                    <button type="button" class="btn btn-secondary" id="btn-slide-suiv" onclick="naviguerSlideCours(1)">Fiche suivante ▶</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ZONE 2 : QUIZ THÉORIQUE -->
+        <div id="chapitre-zone-quiz-theorique" style="display:none;">
+            <div id="quiz-theorique-conteneur"></div>
+        </div>
+
+        <!-- ZONE 3 : EXERCICES D'APPLICATION -->
+        <div id="chapitre-zone-exercice" style="display:none;">
+            <div id="chapitre-questions-conteneur"></div>
+        </div>
+    </div>
+
+    <!-- MODAL GÉNÉRATION ENTRAÎNEMENT -->
+    <div class="modal" id="modal-generer-entrainement">
+        <div class="modal-content">
+            <h2 id="txt-titre-modal-entrainement" style="margin-top:0; color:var(--primary);">✨ Créer un entraînement personnalisé</h2>
+            <p id="txt-soustitre-modal-entrainement" style="color:#64748b; font-size:0.95em;">L'IA va générer une série d'exercices inédits sur ce même thème :</p>
+            <p><strong id="nom-devoir-source" style="color:var(--accent);">-</strong></p>
+
+            <label style="font-weight:bold; margin-top:15px; display:block;">Format de l'exercice :</label>
+            <div style="margin-top:8px;">
+                <label class="radio-option">
+                    <input type="radio" name="format-entrainement" value="select" checked>
+                    <span>📋 Menu déroulant (QCM à choix)</span>
+                </label>
+                <label class="radio-option">
+                    <input type="radio" name="format-entrainement" value="text">
+                    <span>✍️ Saisie de texte libre (Orthographe)</span>
+                </label>
+            </div>
+
+            <label style="font-weight:bold; margin-top:15px; display:block;">Nombre de phrases :</label>
+            <div style="display:flex; gap:10px; margin-top:8px;">
+                <label class="radio-option" style="flex:1; justify-content:center;">
+                    <input type="radio" name="nb-phrases-entrainement" value="5" checked> 5
+                </label>
+                <label class="radio-option" style="flex:1; justify-content:center;">
+                    <input type="radio" name="nb-phrases-entrainement" value="10"> 10
+                </label>
+                <label class="radio-option" style="flex:1; justify-content:center;">
+                    <input type="radio" name="nb-phrases-entrainement" value="15"> 15
+                </label>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:25px;">
+                <button type="button" class="btn btn-secondary" onclick="fermerModalEntrainement()">Annuler</button>
+                <button type="button" class="btn btn-purple" id="btn-lancer-entrainement" onclick="lancerCreationEntrainement()">🚀 Créer mes exercices</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- OVERLAYS D'ERREUR -->
+<div id="punition-overlay">
+    <div id="punition-text">바보!</div>
+    <div id="punition-sub">Niveau 1 : Ça commence mal...</div>
+</div>
+
+<div id="soft-encouragement-toast">
+    <span style="font-size:1.4em;">🌱</span>
+    <span id="soft-toast-text">Ce n'est pas grave, tu apprends !</span>
+</div>
+
+</body>
+</html>
