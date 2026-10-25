@@ -195,7 +195,7 @@ function ecouterAssignations() {
     });
 }
 
-// 5. MODULE CHAPITRE
+// MODULE CHAPITRE
 window.ouvrirMenuChapitreBlocs = function(id) {
     const d = assignationsMap[id];
     if (!d) return;
@@ -470,7 +470,7 @@ window.noterReponseExercice = function(blocId, cle, valeur) {
     if (!assignationActive) return;
     if (!assignationActive.suiviBlocs) assignationActive.suiviBlocs = {};
     if (!assignationActive.suiviBlocs[blocId]) assignationActive.suiviBlocs[blocId] = { statut: "en_cours", reponses: {} };
-    if (!assignationActive.suiviBlocs[blocId].reponses) assignationActive.suiviBlocs[blocId].reponses = {};
+    if (!assignationActive.suiviBlocs[blocId].reponses) assignationActive.suiviBlocs[blocId] = { reponses: {} };
 
     assignationActive.suiviBlocs[blocId].reponses[cle] = valeur;
 };
