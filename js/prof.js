@@ -551,7 +551,7 @@ window.confirmerAssignationGroupee = async function() {
                     devoirId: devoirAAssigner.id,
                     devoirTitre: devoirAAssigner.titre,
                     typeDevoir: "emma",
-                    modeDelf: devoirAAssigner.modeDelf || false,
+                    modeDelf: devoirAAssigner.modeDelf || false, // BIEN TRANSMIS
                     questions: devoirAAssigner.questions || [],
                     statut: "non_commence",
                     retoursEmma: {},
