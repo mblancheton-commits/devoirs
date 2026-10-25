@@ -65,6 +65,9 @@ let filtreTypeBanqueActif = 'tous';
 let texteRechercheBanque = '';
 let donneesExoGenereParPrompt = null;
 
+// Titre initial du document pour restauration après impression
+const titreDocumentOriginal = document.title || "Espace Professeur - Gestion";
+
 window.basculerOnglet = function(tabId, btn) {
     document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
     document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
@@ -366,12 +369,19 @@ window.confirmerAssignationDirecteEleve = async function() {
     }
 };
 
-// COPIE PDF DE L'ÉLÈVE
+// =========================================================================
+// COPIE PDF DE L'ÉLÈVE (SANS LE COURS, MULTI-PAGES & NOM PRÉ-REMPLI)
+// =========================================================================
+let nomFichierPdfPrevu = "copie_eleve";
+
 window.ouvrirCopiePDFProf = function(assignationId) {
     const a = assignationsMap[assignationId];
     if (!a) return;
 
-    document.getElementById('pdf-titre').textContent = a.devoirTitre || "Copie de cours";
+    // Définir le nom prérempli du fichier PDF : CODE-NOM_DU_COURS
+    nomFichierPdfPrevu = `${a.eleveCode}-${a.devoirTitre}`.replace(/[\/\\?%*:|"<>]/g, '_');
+
+    document.getElementById('pdf-titre').textContent = a.devoirTitre || "Copie de devoirs";
     document.getElementById('pdf-eleve').textContent = a.eleveCode;
     document.getElementById('pdf-date').textContent = new Date().toLocaleDateString('fr-FR');
 
@@ -379,28 +389,28 @@ window.ouvrirCopiePDFProf = function(assignationId) {
     zone.innerHTML = "";
     const suivi = a.suiviBlocs || {};
 
-    if (a.bloc_cours && a.bloc_cours.slides) {
-        zone.innerHTML += `<div style="background:#fdfbf7; border:1px solid #e0a92c; padding:15px; margin-bottom:20px; border-radius:8px;">
-            <h3 style="margin-top:0; color:#8a6314;">📖 ${a.bloc_cours.titre || 'Cours théorique'} (${suivi.cours?.statut === 'lu' ? '✓ Validé par l\'élève' : '⏳ Non lu'})</h3>`;
-        a.bloc_cours.slides.forEach((s, idx) => {
-            zone.innerHTML += `<div style="margin-bottom:12px;"><strong>Fiche ${idx+1} : ${s.titre}</strong><pre style="white-space:pre-wrap; font-family:inherit; margin:5px 0 0 0; line-height:1.7;">${s.contenu_fr || s.contenu_ko || ''}</pre></div>`;
-        });
-        zone.innerHTML += `</div>`;
+    // Note : Le cours théorique est volontairement omis ici pour n'imprimer que les réponses de l'élève.
+
+    // Reconstitution des exercices avec surbrillance jaune fluo
+    const blocs = a.blocs_exercices || [];
+    if (blocs.length === 0) {
+        zone.innerHTML = "<p style='color:#64748b;'>Aucun exercice dans ce devoir.</p>";
     }
 
-    const blocs = a.blocs_exercices || [];
     blocs.forEach((b) => {
         const reponses = (suivi[b.id] && suivi[b.id].reponses) ? suivi[b.id].reponses : {};
-        zone.innerHTML += `<h3 style="margin-top:25px; color:#1e293b; border-bottom:1px solid #ddd; padding-bottom:5px;">${b.titre}</h3>`;
-        if (b.consigne) zone.innerHTML += `<p style="font-style:italic; color:#555;">${b.consigne}</p>`;
+        zone.innerHTML += `<h3 style="margin-top:20px; color:#1e293b; border-bottom:2px solid #e2e8f0; padding-bottom:6px;">${b.titre}</h3>`;
+        if (b.consigne) zone.innerHTML += `<p style="font-style:italic; color:#64748b; margin-top:4px;">${b.consigne}</p>`;
         
         const ol = document.createElement('ol');
         ol.style.lineHeight = "2.2";
+        ol.style.marginTop = "10px";
 
         (b.questions || []).forEach((q, qIdx) => {
             const li = document.createElement('li');
             const texteQ = q.q || "";
 
+            // Cas 1 : Trous
             if (/_{2,}/.test(texteQ)) {
                 const parts = texteQ.split(/_{2,}/);
                 let texteLigne = "";
@@ -413,7 +423,9 @@ window.ouvrirCopiePDFProf = function(assignationId) {
                     }
                 }
                 li.innerHTML = texteLigne;
-            } else {
+            } 
+            // Cas 2 : Réponses libres
+            else {
                 const cleLibre = `${qIdx}_reponse_libre`;
                 const rep = reponses[cleLibre] ? `<span class="surbrillance">${reponses[cleLibre]}</span>` : `<span style="color:#aaa;">(non rempli)</span>`;
                 li.innerHTML = `<strong>${texteQ}</strong><br>➔ Réponse de l'élève : ${rep}`;
@@ -424,6 +436,17 @@ window.ouvrirCopiePDFProf = function(assignationId) {
     });
 
     document.getElementById('modal-export-pdf-prof').classList.add('ouverte');
+};
+
+// IMPRESSION AVEC NOM DU FICHIER PRÉ-REMPLI
+window.imprimerCopiePdfEleve = function() {
+    // Modifier temporairement le titre de la page web pour que le navigateur préremplisse le nom du fichier PDF
+    document.title = nomFichierPdfPrevu;
+    window.print();
+    // Restaurer le titre original après impression
+    setTimeout(() => {
+        document.title = titreDocumentOriginal;
+    }, 1000);
 };
 
 function afficherDerniersDevoirsGlobaux() {
@@ -477,7 +500,7 @@ window.ouvrirFicheEleveParCode = function(code) {
     }
 };
 
-// ASSIGNATION MODAL GÉNÉRALE (CORRIGÉE : modeDelf TRANSMIS)
+// ASSIGNATION MODAL GÉNÉRALE
 window.ouvrirModalAssignation = function(devoirId) {
     devoirAAssigner = devoirsMap[devoirId];
     if (!devoirAAssigner) return;
@@ -551,7 +574,7 @@ window.confirmerAssignationGroupee = async function() {
                     devoirId: devoirAAssigner.id,
                     devoirTitre: devoirAAssigner.titre,
                     typeDevoir: "emma",
-                    modeDelf: devoirAAssigner.modeDelf || false, // BIEN TRANSMIS
+                    modeDelf: devoirAAssigner.modeDelf || false,
                     questions: devoirAAssigner.questions || [],
                     statut: "non_commence",
                     retoursEmma: {},
@@ -593,670 +616,4 @@ window.confirmerAssignationGroupee = async function() {
         await batch.commit();
         alert(`✅ Assigné avec succès à ${selectionnes.length} élève(s) !`);
         fermerModalAssignation();
-    } catch(err) {
-        alert("Erreur : " + err.message);
-    } finally {
-        btn.disabled = false;
-        btn.textContent = "✅ Assigner aux élèves cochés";
-    }
-};
-
-window.creerEleve = async function() {
-    const input = document.getElementById('nouvel-eleve-code');
-    const code = input ? input.value.trim().toUpperCase() : "";
-    const cle = document.getElementById('nouvel-eleve-cle').value.trim();
-    if (!code) return alert("Indiquez le code élève (ex: Lucas01).");
-
-    await db.collection("eleves").add({
-        code: code,
-        cleApiPerso: cle || null,
-        dateCreation: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    input.value = "";
-    document.getElementById('nouvel-eleve-cle').value = "";
-    alert(`✅ Élève ${code} enregistré !`);
-};
-
-window.supprimerAssignation = async function(id) {
-    if (confirm("Retirer ce devoir à l'élève ?")) {
-        await db.collection("assignations").doc(id).delete();
-    }
-};
-
-window.supprimerDevoir = async function(id) {
-    if (confirm("Supprimer ce devoir de la banque et chez tous les élèves ?")) {
-        await db.collection("devoirs").doc(id).delete();
-        const snap = await db.collection("assignations").where("devoirId", "==", id).get();
-        const batch = db.batch();
-        snap.forEach(doc => batch.delete(doc.ref));
-        await batch.commit();
-    }
-};
-
-window.piocherQuestionsEmma = function() {
-    const melange = [...questionsBanqueEmmaStandard].sort(() => 0.5 - Math.random());
-    document.getElementById('questions-emma-texte').value = melange.slice(0, 10).join('\n');
-    document.getElementById('check-mode-delf').checked = false;
-};
-
-window.piocherQuestionsDelf = function() {
-    const melange = [...sujetsDelfB1B2].sort(() => 0.5 - Math.random());
-    document.getElementById('questions-emma-texte').value = melange.slice(0, 10).join('\n');
-    document.getElementById('check-mode-delf').checked = true;
-};
-
-window.enregistrerDevoirEmma = async function() {
-    const titre = document.getElementById('titre-emma').value.trim();
-    const lignes = document.getElementById('questions-emma-texte').value.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-    const estModeDelf = document.getElementById('check-mode-delf').checked;
-
-    if (!titre || lignes.length === 0) return alert("Indiquez un titre et des questions.");
-
-    await db.collection("devoirs").add({
-        titre: titre,
-        typeDevoir: "emma",
-        modeDelf: estModeDelf,
-        questions: lignes,
-        dateCreation: firebase.firestore.FieldValue.serverTimestamp()
-    });
-
-    alert(`✅ Exercice IA avec Emma (${estModeDelf ? 'Mode DELF B1/B2' : 'Standard'}) enregistré !`);
-    document.getElementById('titre-emma').value = "";
-    document.getElementById('questions-emma-texte').value = "";
-    document.getElementById('check-mode-delf').checked = false;
-    basculerOnglet('tab-devoirs', document.getElementById('btn-tab-devoirs'));
-};
-
-// ANALYSE PDF & SÉLECTION MODÈLE
-window.actualiserModelesNanoGPT = async function() {
-    const urlApi = document.getElementById('api-url').value.trim();
-    const cleNano = document.getElementById('nanogpt-key-input').value.trim();
-    if (!cleNano) return alert("Veuillez renseigner votre clé API NanoGPT ci-dessous pour lister vos modèles.");
-
-    const btn = document.getElementById('btn-refresh-models');
-    btn.disabled = true;
-    btn.textContent = "⏳...";
-
-    try {
-        const res = await fetch(urlApi.replace(/\/$/, "") + "/api/nanogpt-models", {
-            method: "GET",
-            headers: { "x-nanogpt-key": cleNano }
-        });
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-
-        const select = document.getElementById('select-ia-model');
-        select.innerHTML = "";
-
-        const optGroupe = document.createElement('optgroup');
-        optGroupe.label = "⭐ Modèles Recommandés";
-
-        const modelesStars = [
-            "deepseek/deepseek-v4.1-flash:thinking",
-            "qwen/qwen3-235b-a22b-thinking-2507",
-            "gemini-3.8-flash"
-        ];
-
-        modelesStars.forEach(m => {
-            const opt = document.createElement('option');
-            opt.value = m;
-            opt.textContent = m;
-            optGroupe.appendChild(opt);
-        });
-        select.appendChild(optGroupe);
-
-        const optAutres = document.createElement('optgroup');
-        optAutres.label = `🌐 Tous les modèles NanoGPT (${data.models.length})`;
-
-        data.models.forEach(m => {
-            if (!modelesStars.includes(m)) {
-                const opt = document.createElement('option');
-                opt.value = m;
-                opt.textContent = m;
-                optAutres.appendChild(opt);
-            }
-        });
-        select.appendChild(optAutres);
-
-        alert(`✅ ${data.models.length} modèles NanoGPT récupérés avec succès !`);
-
-    } catch(e) {
-        alert("Erreur lors de la récupération des modèles : " + e.message);
-    } finally {
-        btn.disabled = false;
-        btn.textContent = "🔄";
-    }
-};
-
-window.analyserPDFAvecIA = async function() {
-    const urlApi = document.getElementById('api-url').value.trim();
-    const fileInput = document.getElementById('pdf-file-input');
-    const modelChoisi = document.getElementById('select-ia-model').value;
-    const cleNano = document.getElementById('nanogpt-key-input').value.trim();
-
-    if (!urlApi || !fileInput.files[0]) return alert("Indiquez l'URL Render et le fichier PDF.");
-    if (cleNano) localStorage.setItem("nanoGptKey", cleNano);
-
-    const btn = document.getElementById('btn-analyser-pdf');
-    btn.disabled = true;
-    btn.textContent = `⏳ Analyse avec ${modelChoisi}...`;
-
-    const formData = new FormData();
-    formData.append("pdf", fileInput.files[0]);
-
-    try {
-        const res = await fetch(urlApi.replace(/\/$/, "") + "/api/analyser-pdf", {
-            method: "POST",
-            headers: { 
-                "x-model-choice": modelChoisi,
-                "x-nanogpt-key": cleNano
-            },
-            body: formData
-        });
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-
-        donneesIAPret = data;
-        coursEnEditionId = null;
-        document.getElementById('ia-titre').value = data.titre || "Chapitre de cours";
-        
-        modeEditionManuelActif = false;
-        mettreAJourBoutonModeEdition();
-        changerLangueApercu('fr', document.getElementById('subtab-btn-fr'));
-        document.getElementById('card-resultat-ia').style.display = "block";
-        alert(`✅ Analyse réussie avec ${modelChoisi} !`);
-
-    } catch(e) {
-        alert("Erreur lors de l'analyse : " + e.message);
-    } finally {
-        btn.disabled = false;
-        btn.textContent = "🚀 Lancer l'analyse du cours";
-    }
-};
-
-window.appliquerRetoucheIA = async function() {
-    if (!donneesIAPret) return alert("Aucun cours n'est actuellement en cours d'analyse.");
-
-    const instruction = document.getElementById('instruction-retouche-texte').value.trim();
-    if (!instruction) return alert("Veuillez formuler votre demande de modification à l'IA.");
-
-    const urlApi = document.getElementById('api-url').value.trim();
-    const modelChoisi = document.getElementById('select-ia-model').value;
-    const cleNano = document.getElementById('nanogpt-key-input').value.trim();
-
-    const btn = document.getElementById('btn-appliquer-retouche');
-    btn.disabled = true;
-    btn.textContent = "⏳ L'IA retouche le cours complet...";
-
-    try {
-        const res = await fetch(urlApi.replace(/\/$/, "") + "/api/ajuster-contenu", {
-            method: "POST",
-            headers: { 
-                "Content-Type": "application/json",
-                "x-model-choice": modelChoisi,
-                "x-nanogpt-key": cleNano
-            },
-            body: JSON.stringify({
-                contenuActuel: donneesIAPret,
-                instruction: instruction
-            })
-        });
-
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-
-        donneesIAPret = data;
-        document.getElementById('ia-titre').value = data.titre || document.getElementById('ia-titre').value;
-
-        rendreApercuTrilingue(langueApercuActive);
-        document.getElementById('instruction-retouche-texte').value = "";
-        alert("✅ Modifications appliquées avec succès !");
-
-    } catch(e) {
-        alert("Erreur lors de la retouche IA : " + e.message);
-    } finally {
-        btn.disabled = false;
-        btn.textContent = "✨ Appliquer les modifications";
-    }
-};
-
-window.basculerModeEditionManuel = function() {
-    modeEditionManuelActif = !modeEditionManuelActif;
-    mettreAJourBoutonModeEdition();
-    rendreApercuTrilingue(langueApercuActive);
-};
-
-function mettreAJourBoutonModeEdition() {
-    const btn = document.getElementById('btn-toggle-edit-mode');
-    if (!btn) return;
-    if (modeEditionManuelActif) {
-        btn.textContent = "👁️ Passer en Mode Aperçu";
-        btn.className = "btn btn-secondary";
-    } else {
-        btn.textContent = "✏️ Mode Édition manuelle";
-        btn.className = "btn btn-purple";
-    }
-}
-
-window.changerLangueApercu = function(lang, btn) {
-    langueApercuActive = lang;
-    document.querySelectorAll('.subtabs-lang .subtab-lang-btn').forEach(b => b.classList.remove('active'));
-    if (btn) btn.classList.add('active');
-    rendreApercuTrilingue(lang);
-};
-
-function rendreApercuTrilingue(lang) {
-    const conteneur = document.getElementById('zone-apercu-dynamique');
-    if (modeEditionManuelActif) {
-        conteneur.innerHTML = construireFormulaireEditionManuel(donneesIAPret, lang);
-    } else {
-        conteneur.innerHTML = construireHtmlContenuCours(donneesIAPret, lang);
-    }
-}
-
-function construireHtmlContenuCours(data, lang) {
-    if (!data) return "<p>Aucune donnée disponible.</p>";
-
-    const slides = (data.bloc_cours && data.bloc_cours.slides) ? data.bloc_cours.slides : [];
-    const htmlCours = slides.map(s => {
-        let texte = s.contenu_fr || "";
-        if (lang === 'ko' && s.contenu_ko) texte = s.contenu_ko;
-        else if (lang === 'en' && s.contenu_en) texte = s.contenu_en;
-
-        return `
-            <div style="border-bottom:1px solid #e2e8f0; padding-bottom:12px; margin-bottom:14px;">
-                <h4 style="margin:0 0 6px 0; color:var(--accent); font-size:1.1em;">${s.titre || `Fiche ${s.numero}`}</h4>
-                <p style="margin:0; white-space:pre-wrap; line-height:1.7;">${texte}</p>
-            </div>
-        `;
-    }).join('') || "<p style='color:#64748b;'>Aucune fiche de cours.</p>";
-
-    const points = (data.points_importants && data.points_importants[lang]) ? data.points_importants[lang] : (data.points_importants ? (data.points_importants.fr || []) : []);
-    const htmlPoints = points.map(pt => `<li>${pt}</li>`).join('');
-
-    const questions = (data.quiz_theorique && data.quiz_theorique.questions) ? data.quiz_theorique.questions : [];
-    let htmlQuiz = "";
-    if (questions.length === 0) {
-        htmlQuiz = "<p style='color:#64748b;'>Aucun quiz généré.</p>";
-    } else {
-        htmlQuiz = questions.map((q, idx) => {
-            const intitule = (q.question && q.question[lang]) ? q.question[lang] : (q.question ? q.question.fr : "Question");
-            const opts = (q.options && q.options[lang]) ? q.options[lang] : (q.options ? q.options.fr : []);
-            const explic = (q.explication && q.explication[lang]) ? q.explication[lang] : (q.explication ? q.explication.fr : "");
-
-            const optsHtml = opts.map((opt, oIdx) => {
-                const estBonne = (oIdx === q.reponse_correcte_index);
-                return `
-                    <div style="padding:6px 10px; margin:4px 0; border-radius:6px; background:${estBonne ? '#ecfdf5' : '#f8fafc'}; border:1px solid ${estBonne ? '#10b981' : '#e2e8f0'}; font-weight:${estBonne ? 'bold' : 'normal'}; color:${estBonne ? '#065f46' : 'inherit'};">
-                        ${String.fromCharCode(65 + oIdx)}. ${opt} ${estBonne ? '✅ (Bonne réponse)' : ''}
-                    </div>
-                `;
-            }).join('');
-
-            return `
-                <div class="quiz-item-apercu">
-                    <strong style="color:var(--primary); font-size:1.05em;">Question ${idx + 1} :</strong> ${intitule}
-                    <div style="margin:10px 0;">${optsHtml}</div>
-                    <div style="background:#f1f5f9; padding:8px 12px; border-radius:6px; font-size:0.9em; color:#334155;">
-                        💡 <strong>Explication :</strong> ${explic}
-                    </div>
-                </div>
-            `;
-        }).join('');
-    }
-
-    const exos = data.blocs_exercices || [];
-    const htmlExos = exos.map((b, bIdx) => `
-        <div style="background:white; border:1px solid #cbd5e0; border-radius:8px; padding:14px; margin-bottom:12px;">
-            <h4 style="margin:0 0 6px 0; color:var(--primary);">${b.titre || `Exercice ${bIdx + 1}`} - <span style="font-weight:normal; font-size:0.9em; color:#64748b;">${b.consigne || ''}</span></h4>
-            <ol style="margin:8px 0 0 20px; line-height:1.8;">
-                ${(b.questions || []).map(q => `<li>${q.q}</li>`).join('')}
-            </ol>
-        </div>
-    `).join('') || "<p style='color:#64748b;'>Aucun bloc d'exercices.</p>";
-
-    return `
-        <div class="apercu-section" style="border-left: 6px solid #8b5cf6;">
-            <h3>📖 1. Fiches de Cours Théorique</h3>
-            ${htmlCours}
-        </div>
-
-        <div class="apercu-section" style="border-left: 6px solid #3b82f6;">
-            <h3>💡 2. Points Importants de la Leçon (Synthèse)</h3>
-            <ul style="margin:6px 0 0 20px; line-height:1.8;">
-                ${htmlPoints}
-            </ul>
-        </div>
-
-        <div class="apercu-section" style="border-left: 6px solid #10b981;">
-            <h3>🧠 3. Quiz Théorique Intermédiaire (${questions.length} questions)</h3>
-            ${htmlQuiz}
-        </div>
-
-        <div class="apercu-section" style="border-left: 6px solid #f59e0b;">
-            <h3>✍️ 4. Blocs d'Exercices Pratiques (${exos.length} blocs)</h3>
-            ${htmlExos}
-        </div>
-    `;
-}
-
-function construireFormulaireEditionManuel(data, lang) {
-    if (!data) return "<p>Aucune donnée.</p>";
-
-    const slides = (data.bloc_cours && data.bloc_cours.slides) ? data.bloc_cours.slides : [];
-    const htmlCours = slides.map((s, idx) => {
-        const champContenu = (lang === 'ko') ? 'contenu_ko' : (lang === 'en' ? 'contenu_en' : 'contenu_fr');
-        const valTexte = s[champContenu] || "";
-        return `
-            <div class="edit-box-item">
-                <label>Titre Fiche ${idx + 1} :</label>
-                <input type="text" value="${s.titre || ''}" oninput="donneesIAPret.bloc_cours.slides[${idx}].titre = this.value">
-                <label style="margin-top:8px;">Texte d'explication (${lang.toUpperCase()}) :</label>
-                <textarea rows="4" oninput="donneesIAPret.bloc_cours.slides[${idx}]['${champContenu}'] = this.value">${valTexte}</textarea>
-            </div>
-        `;
-    }).join('');
-
-    const points = (data.points_importants && data.points_importants[lang]) ? data.points_importants[lang] : [];
-    const textePoints = points.join('\n');
-
-    const questions = (data.quiz_theorique && data.quiz_theorique.questions) ? data.quiz_theorique.questions : [];
-    const htmlQuiz = questions.map((q, qIdx) => {
-        const qTxt = (q.question && q.question[lang]) ? q.question[lang] : "";
-        const expTxt = (q.explication && q.explication[lang]) ? q.explication[lang] : "";
-        const opts = (q.options && q.options[lang]) ? q.options[lang] : [];
-
-        const optsInputs = opts.map((opt, oIdx) => `
-            <div style="display:flex; align-items:center; gap:8px; margin-top:6px;">
-                <input type="radio" name="bonnerep_${qIdx}" value="${oIdx}" ${oIdx === q.reponse_correcte_index ? 'checked' : ''} onchange="donneesIAPret.quiz_theorique.questions[${qIdx}].reponse_correcte_index = ${oIdx}">
-                <input type="text" value="${opt}" oninput="donneesIAPret.quiz_theorique.questions[${qIdx}].options['${lang}'][${oIdx}] = this.value" placeholder="Option ${String.fromCharCode(65 + oIdx)}">
-            </div>
-        `).join('');
-
-        return `
-            <div class="edit-box-item">
-                <label>Question ${qIdx + 1} (${lang.toUpperCase()}) :</label>
-                <input type="text" value="${qTxt}" oninput="donneesIAPret.quiz_theorique.questions[${qIdx}].question['${lang}'] = this.value">
-                <label style="margin-top:8px;">Options de réponse (Cochez la bonne) :</label>
-                ${optsInputs}
-                <label style="margin-top:8px;">Explication (${lang.toUpperCase()}) :</label>
-                <textarea rows="2" oninput="donneesIAPret.quiz_theorique.questions[${qIdx}].explication['${lang}'] = this.value">${expTxt}</textarea>
-            </div>
-        `;
-    }).join('');
-
-    const exos = data.blocs_exercices || [];
-    const htmlExos = exos.map((b, bIdx) => {
-        const phrasesTexte = (b.questions || []).map(q => q.q).join('\n');
-        return `
-            <div class="edit-box-item">
-                <label>Titre de l'exercice :</label>
-                <input type="text" value="${b.titre || ''}" oninput="donneesIAPret.blocs_exercices[${bIdx}].titre = this.value">
-                <label style="margin-top:8px;">Consigne :</label>
-                <input type="text" value="${b.consigne || ''}" oninput="donneesIAPret.blocs_exercices[${bIdx}].consigne = this.value">
-                <label style="margin-top:8px;">Questions / Phrases de l'exercice (une par ligne) :</label>
-                <textarea rows="6" oninput="donneesIAPret.blocs_exercices[${bIdx}].questions = this.value.split('\\n').filter(l=>l.trim().length>0).map(l=>({q: l.trim()}))">${phrasesTexte}</textarea>
-            </div>
-        `;
-    }).join('');
-
-    return `
-        <div style="background:#eff6ff; border:2px solid #93c5fd; padding:12px 18px; border-radius:8px; margin-bottom:15px; font-weight:600; color:#1e40af;">
-            ✏️ Mode Édition actif (${lang.toUpperCase()}) : modifiez directement les textes au clavier.
-        </div>
-
-        <div class="apercu-section" style="border-left: 6px solid #8b5cf6;">
-            <h3>📖 1. Fiches de Cours Théorique</h3>
-            ${htmlCours}
-        </div>
-
-        <div class="apercu-section" style="border-left: 6px solid #3b82f6;">
-            <h3>💡 2. Points Importants de la Leçon (Une puce par ligne)</h3>
-            <textarea rows="5" oninput="donneesIAPret.points_importants['${lang}'] = this.value.split('\\n').filter(l=>l.trim().length>0)">${textePoints}</textarea>
-        </div>
-
-        <div class="apercu-section" style="border-left: 6px solid #10b981;">
-            <h3>🧠 3. Quiz Théorique Intermédiaire</h3>
-            ${htmlQuiz}
-        </div>
-
-        <div class="apercu-section" style="border-left: 6px solid #f59e0b;">
-            <h3>✍️ 4. Blocs d'Exercices Pratiques</h3>
-            ${htmlExos}
-        </div>
-    `;
-}
-
-window.sauvegarderDevoirIA = async function() {
-    if (!donneesIAPret) return;
-
-    const titreFinal = document.getElementById('ia-titre').value.trim() || donneesIAPret.titre;
-
-    const objetSauvegarde = {
-        titre: titreFinal,
-        typeDevoir: "chapitre_cours",
-        points_importants: donneesIAPret.points_importants || null,
-        quiz_theorique: donneesIAPret.quiz_theorique || null,
-        bloc_cours: donneesIAPret.bloc_cours || null,
-        blocs_exercices: donneesIAPret.blocs_exercices || [],
-        dateCreation: firebase.firestore.FieldValue.serverTimestamp()
-    };
-
-    if (coursEnEditionId) {
-        await db.collection("devoirs").doc(coursEnEditionId).update(objetSauvegarde);
-
-        const snap = await db.collection("assignations").where("devoirId", "==", coursEnEditionId).get();
-        const batch = db.batch();
-        snap.forEach(doc => {
-            batch.update(doc.ref, {
-                devoirTitre: titreFinal,
-                points_importants: objetSauvegarde.points_importants,
-                quiz_theorique: objetSauvegarde.quiz_theorique,
-                bloc_cours: objetSauvegarde.bloc_cours,
-                blocs_exercices: objetSauvegarde.blocs_exercices
-            });
-        });
-        await batch.commit();
-
-        alert("✅ Cours existant mis à jour dans la banque et chez les élèves !");
-    } else {
-        await db.collection("devoirs").add(objetSauvegarde);
-        alert("✅ Chapitre complet enregistré dans la banque !");
-    }
-
-    document.getElementById('card-resultat-ia').style.display = "none";
-    basculerOnglet('tab-devoirs', document.getElementById('btn-tab-devoirs'));
-};
-
-window.editerCoursDepuisBanque = function(devoirId) {
-    const d = devoirsMap[devoirId];
-    if (!d) return;
-
-    coursEnEditionId = devoirId;
-    donneesIAPret = JSON.parse(JSON.stringify(d));
-    document.getElementById('ia-titre').value = d.titre || "";
-
-    modeEditionManuelActif = true;
-    mettreAJourBoutonModeEdition();
-
-    basculerOnglet('tab-pdf', document.getElementById('btn-tab-pdf'));
-    changerLangueApercu('fr', document.getElementById('subtab-btn-fr'));
-    document.getElementById('card-resultat-ia').style.display = "block";
-};
-
-window.ouvrirApercuCoursDepuisBanque = function(devoirId) {
-    coursApercuModal = devoirsMap[devoirId];
-    if (!coursApercuModal) return;
-
-    document.getElementById('modal-apercu-titre').textContent = coursApercuModal.titre;
-    changerLangueModalApercu('fr');
-    document.getElementById('modal-apercu-cours').classList.add('ouverte');
-};
-
-window.changerLangueModalApercu = function(lang) {
-    document.getElementById('btn-modal-fr').className = "subtab-lang-btn" + (lang === 'fr' ? ' active' : '');
-    document.getElementById('btn-modal-en').className = "subtab-lang-btn" + (lang === 'en' ? ' active' : '');
-    document.getElementById('btn-modal-ko').className = "subtab-lang-btn" + (lang === 'ko' ? ' active' : '');
-    document.getElementById('modal-apercu-contenu').innerHTML = construireHtmlContenuCours(coursApercuModal, lang);
-};
-
-window.voirRetoursEmmaProf = function(assignationId) {
-    const a = assignationsMap[assignationId];
-    if (!a) return;
-
-    const modal = document.getElementById('modal-fautes');
-    document.getElementById('modal-titre').textContent = `Corrections Emma - ${a.eleveCode}`;
-
-    const retours = a.retoursEmma || {};
-    let html = `<div style="line-height:1.7;">`;
-
-    (a.questions || []).forEach((q, idx) => {
-        const r = retours[idx];
-        html += `<div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:15px; margin-bottom:15px;">
-            <strong style="color:var(--primary);">Q${idx+1} : ${q}</strong><br>`;
-        if (r) {
-            html += `👀 <strong>Ta phrase</strong> : "${r.phrase_eleve}"<br>
-                     💬 <strong>Emma</strong> : ${r.reponse_amicale}<br>`;
-            if (r.traduction_reponse) html += `🌐 <em>Traduction Emma</em> : ${r.traduction_reponse}<br>`;
-            html += `✅ <strong>Ce qui est bien</strong> : ${r.ce_qui_est_bien}<br>
-                     ❌ <strong>Fautes</strong> : ${r.les_fautes}<br>
-                     ➡️ <strong>Corrigé</strong> : <strong style="color:var(--success);">${r.phrase_corrigee}</strong><br>`;
-            if (r.traduction_phrase_corrigee) html += `🌐 <em>Traduction corrigé</em> : ${r.traduction_phrase_corrigee}<br>`;
-            html += `💡 <strong>Améliorations</strong> : ${r.ameliorations}`;
-
-            if (r.argument_pour || r.argument_contre) {
-                html += `
-                    <div style="margin-top:10px; background:#faf5ff; border:1px solid #c084fc; border-radius:6px; padding:10px;">
-                        <strong style="color:#6b21a8;">🎓 Suggestions d'arguments DELF B1/B2 :</strong><br>
-                        ${r.argument_pour ? `➕ <strong>Pour :</strong> ${r.argument_pour}<br>` : ''}
-                        ${r.argument_contre ? `⚖️ <strong>Contre :</strong> ${r.argument_contre}<br>` : ''}
-                    </div>
-                `;
-            }
-        } else {
-            html += `<span style="color:#aaa;">(Pas encore répondu)</span>`;
-        }
-        html += `</div>`;
-    });
-    html += `</div>`;
-    document.getElementById('modal-contenu').innerHTML = html;
-    modal.classList.add('ouverte');
-};
-
-window.filtrerBanqueDevoirs = function() {
-    const input = document.getElementById('input-recherche-banque');
-    texteRechercheBanque = (input ? input.value : '').trim().toLowerCase();
-    afficherTableauBanqueDevoirs();
-};
-
-window.changerFiltreTypeBanque = function(type, btn) {
-    filtreTypeBanqueActif = type;
-    document.querySelectorAll('.btn-filtre-banque').forEach(b => b.classList.remove('active'));
-    if (btn) btn.classList.add('active');
-    afficherTableauBanqueDevoirs();
-};
-
-function afficherTableauBanqueDevoirs() {
-    const tbody = document.getElementById('table-devoirs-corps');
-    if (!tbody) return;
-    tbody.innerHTML = "";
-
-    let devoirsAffiches = listeDevoirs.filter(d => {
-        const matchType = (filtreTypeBanqueActif === 'tous') || (d.typeDevoir === filtreTypeBanqueActif);
-        const matchTexte = !texteRechercheBanque || (d.titre || '').toLowerCase().includes(texteRechercheBanque);
-        return matchType && matchTexte;
-    });
-
-    const nbTous = listeDevoirs.length;
-    const nbCours = listeDevoirs.filter(d => d.typeDevoir === 'chapitre_cours').length;
-    const nbEmma = listeDevoirs.filter(d => d.typeDevoir === 'emma').length;
-    const nbInteractifs = listeDevoirs.filter(d => d.typeDevoir === 'interactif').length;
-
-    const elTous = document.getElementById('compteur-filtre-tous');
-    const elCours = document.getElementById('compteur-filtre-cours');
-    const elEmma = document.getElementById('compteur-filtre-emma');
-    const elInteractifs = document.getElementById('compteur-filtre-interactifs');
-
-    if (elTous) elTous.textContent = `(${nbTous})`;
-    if (elCours) elCours.textContent = `(${nbCours})`;
-    if (elEmma) elEmma.textContent = `(${nbEmma})`;
-    if (elInteractifs) elInteractifs.textContent = `(${nbInteractifs})`;
-
-    if (devoirsAffiches.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#64748b; padding:25px;">Aucun devoir ne correspond à votre recherche.</td></tr>`;
-        return;
-    }
-
-    devoirsAffiches.forEach(d => {
-        const tr = document.createElement('tr');
-        let badge = "";
-        let info = "";
-        let boutonsHtml = "";
-
-        if (d.typeDevoir === "emma") {
-            badge = `<span class="badge-emma">🤖 Emma IA</span> ${d.modeDelf ? '<span class="badge-delf">🎓 DELF</span>' : ''}`;
-            info = `${(d.questions || []).length} questions ${d.modeDelf ? 'd\'argumentation' : 'conversationnelles'}`;
-            boutonsHtml = `
-                <button type="button" class="btn btn-sm btn-success" onclick="ouvrirModalAssignation('${d.id}')">➕ Assigner</button>
-                <button type="button" class="btn btn-sm btn-danger" onclick="supprimerDevoir('${d.id}')">🗑️</button>
-            `;
-        } else if (d.typeDevoir === "interactif") {
-            badge = `<span class="badge-interactif">⚡ Interactif</span>`;
-            info = `${(d.phrases || []).length} phrases d'exercices`;
-            boutonsHtml = `
-                <button type="button" class="btn btn-sm btn-success" onclick="ouvrirModalAssignation('${d.id}')">➕ Assigner</button>
-                <button type="button" class="btn btn-sm btn-danger" onclick="supprimerDevoir('${d.id}')">🗑️</button>
-            `;
-        } else {
-            badge = `<span class="badge-chapitre">📖 Cours + Quiz</span>`;
-            info = `Fiches de cours + Quiz + ${(d.blocs_exercices || []).length} blocs`;
-            boutonsHtml = `
-                <button type="button" class="btn btn-sm btn-purple" onclick="editerCoursDepuisBanque('${d.id}')">✏️ Éditer</button>
-                <button type="button" class="btn btn-sm btn-secondary" onclick="ouvrirApercuCoursDepuisBanque('${d.id}')">👁️ Aperçu</button>
-                <button type="button" class="btn btn-sm btn-success" onclick="ouvrirModalAssignation('${d.id}')">➕ Assigner</button>
-                <button type="button" class="btn btn-sm btn-danger" onclick="supprimerDevoir('${d.id}')">🗑️</button>
-            `;
-        }
-
-        tr.innerHTML = `
-            <td><strong style="color:var(--primary); font-size:1.05em;">${d.titre}</strong></td>
-            <td>${badge}</td>
-            <td>${info}</td>
-            <td style="display:flex; gap:6px; flex-wrap:wrap;">
-                ${boutonsHtml}
-            </td>
-        `;
-        tbody.appendChild(tr);
-    });
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    const cleStockee = localStorage.getItem("nanoGptKey");
-    if (cleStockee && document.getElementById('nanogpt-key-input')) {
-        document.getElementById('nanogpt-key-input').value = cleStockee;
-    }
-
-    if (!db) return;
-
-    db.collection("eleves").orderBy("dateCreation", "desc").onSnapshot(snap => {
-        listeEleves = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        filtrerEleves();
-    });
-
-    db.collection("devoirs").orderBy("dateCreation", "desc").onSnapshot(snap => {
-        listeDevoirs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        devoirsMap = {};
-        listeDevoirs.forEach(d => { devoirsMap[d.id] = d; });
-        afficherTableauBanqueDevoirs();
-    });
-
-    db.collection("assignations").orderBy("dateAssignation", "desc").onSnapshot(snap => {
-        listeAssignations = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        assignationsMap = {};
-        listeAssignations.forEach(a => { assignationsMap[a.id] = a; });
-
-        afficherTableauEleves();
-        afficherDerniersDevoirsGlobaux();
-        if (eleveSelectionne) afficherDevoirsFicheEleve();
-    });
-});
+    } ca
