@@ -42,7 +42,7 @@ th { background: #f8fafc; color: #475569; }
 .badge-auto { background: #dbeafe; color: #1e40af; padding: 3px 8px; border-radius: 6px; font-weight: bold; font-size: 0.85em; }
 .badge-delf { background: #fdf2f8; color: #be185d; border: 1px solid #fbcfe8; padding: 2px 7px; border-radius: 6px; font-size: 0.8em; font-weight: bold; margin-left: 5px; }
 
-/* MODALES SÉCURISÉES */
+/* MODALES */
 .modal { 
     display: none; 
     position: fixed; 
@@ -99,7 +99,7 @@ th { background: #f8fafc; color: #475569; }
 /* SURBRILLANCE DES RÉPONSES DANS LA COPIE PDF */
 .surbrillance { 
     background-color: #fef08a !important; 
-    padding: 2px 6px; 
+    padding: 3px 8px; 
     border-radius: 4px; 
     font-weight: bold; 
     color: #1e293b !important; 
@@ -108,10 +108,12 @@ th { background: #f8fafc; color: #475569; }
 }
 
 /* =========================================================================
-   GESTION DE L'IMPRESSION (PAGINATION NETTE SANS CHEVAUCHEMENT)
+   GESTION DE L'IMPRESSION (CORRECTION MULTI-PAGES SANS BLOCAGE 1/1)
    ========================================================================= */
 @media print {
-    body {
+    html, body {
+        height: auto !important;
+        overflow: visible !important;
         background: white !important;
         color: black !important;
         margin: 0 !important;
@@ -126,12 +128,14 @@ th { background: #f8fafc; color: #475569; }
         display: none !important;
     }
 
-    /* Seule la modale PDF est affichée en flux statique sans position absolute */
+    /* Déverrouiller la hauteur et le scroll pour permettre l'écoulement sur toutes les pages */
     #modal-export-pdf-prof {
         display: block !important;
         position: static !important;
         width: 100% !important;
         height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
         background: white !important;
         padding: 0 !important;
         margin: 0 !important;
@@ -141,6 +145,9 @@ th { background: #f8fafc; color: #475569; }
     .modal-content {
         max-width: 100% !important;
         width: 100% !important;
+        max-height: none !important;
+        height: auto !important;
+        overflow: visible !important;
         padding: 0 !important;
         margin: 0 !important;
         box-shadow: none !important;
@@ -151,17 +158,16 @@ th { background: #f8fafc; color: #475569; }
         display: block !important;
         position: static !important;
         width: 100% !important;
-        padding: 20px !important;
+        padding: 15px 25px !important;
         box-sizing: border-box !important;
     }
 
-    /* Évite la découpe sauvage des titres d'exercices */
-    h2, h3 {
+    h1, h2, h3 {
         page-break-after: avoid;
         break-after: avoid;
     }
-    
-    li, .fiche-cours-print {
+
+    ol, li {
         page-break-inside: avoid;
         break-inside: avoid;
     }
