@@ -1407,15 +1407,40 @@
         let tradPhraseCorrigee = "";
         if (data.traduction_phrase_corrigee) tradPhraseCorrigee = `<div class="traduction-texte">🌐 ${data.traduction_phrase_corrigee}</div>`;
 
-        // NOUVEAU : ENCADRÉ ARGUMENT DELF B1/B2
-        let blocArgumentDelfHtml = "";
-        if (data.argument_delf) {
-            let tradArg = data.traduction_argument_delf ? `<div class="traduction-texte">🌐 ${data.traduction_argument_delf}</div>` : "";
-            blocArgumentDelfHtml = `
-                <div style="margin-top:14px; background:#faf5ff; border:1px solid #c084fc; border-radius:8px; padding:12px; font-size:0.95em;">
-                    <div style="font-weight:bold; color:#6b21a8; margin-bottom:4px;">🗣️ Idée d'argument pour ton oral (DELF B1/B2) :</div>
-                    <div style="color:#581c87; font-weight:600;">"${data.argument_delf}"</div>
-                    ${tradArg}
+       // NOUVEAU : STRUCTURE DIALECTIQUE DELF B1/B2 (ARGUMENT + CONTRE-ARGUMENT)
+        let blocDelfDialectiqueHtml = "";
+        if (data.argument_pour || data.argument_contre) {
+            let itemPour = "";
+            if (data.argument_pour) {
+                let trad = data.traduction_argument_pour ? `<div class="traduction-texte">🌐 ${data.traduction_argument_pour}</div>` : "";
+                itemPour = `
+                    <div style="margin-bottom:10px;">
+                        <strong style="color:#059669;">➕ Pour enrichir ton idée :</strong>
+                        <div style="color:#065f46; font-weight:600; margin-top:2px;">"${data.argument_pour}"</div>
+                        ${trad}
+                    </div>
+                `;
+            }
+
+            let itemContre = "";
+            if (data.argument_contre) {
+                let trad = data.traduction_argument_contre ? `<div class="traduction-texte">🌐 ${data.traduction_argument_contre}</div>` : "";
+                itemContre = `
+                    <div>
+                        <strong style="color:#b45309;">⚖️ Pour nuancer / débattre :</strong>
+                        <div style="color:#92400e; font-weight:600; margin-top:2px;">"${data.argument_contre}"</div>
+                        ${trad}
+                    </div>
+                `;
+            }
+
+            blocDelfDialectiqueHtml = `
+                <div style="margin-top:15px; background:#fdf4ff; border:2px solid #e879f9; border-radius:10px; padding:14px; font-size:0.95em;">
+                    <div style="font-weight:bold; color:#86198f; font-size:1.05em; margin-bottom:8px; border-bottom:1px dashed #f0abfc; padding-bottom:5px;">
+                        🎓 Structure d'argumentation DELF B1/B2
+                    </div>
+                    ${itemPour}
+                    ${itemContre}
                 </div>
             `;
         }
