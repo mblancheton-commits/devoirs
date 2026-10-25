@@ -477,7 +477,7 @@ window.ouvrirFicheEleveParCode = function(code) {
     }
 };
 
-// ASSIGNATION MODAL GÉNÉRALE
+// ASSIGNATION MODAL GÉNÉRALE (CORRIGÉE : modeDelf TRANSMIS)
 window.ouvrirModalAssignation = function(devoirId) {
     devoirAAssigner = devoirsMap[devoirId];
     if (!devoirAAssigner) return;
