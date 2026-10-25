@@ -67,6 +67,7 @@
         .devoir-card.fait { border-left-color: var(--success); }
 
         .badge-type { padding: 3px 8px; border-radius: 6px; font-weight: bold; font-size: 0.85em; }
+        .badge-delf { background: #fdf2f8; color: #be185d; border: 1px solid #fbcfe8; padding: 2px 7px; border-radius: 6px; font-size: 0.8em; font-weight: bold; margin-left: 5px; }
 
         /* VUE EMMA IA */
         #vue-emma-ia { display: none; }
@@ -94,7 +95,7 @@
 
         #vue-contenu-bloc-chapitre { display: none; }
         .cours-slide-container { background: white; padding: 30px; border-radius: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); line-height: 1.9; font-size: 1.1em; }
-        .phrase-item { background: white; border: 1px solid #e2e8f0; padding: 18px; border-radius: 10px; margin-bottom: 16px; font-size: 1.08em; line-height: 2.2; }
+        .phrase-item { background: white; border: 1px solid #e2e8f0; padding: 18px; border-radius: 10px; margin-bottom: 16px; font-size: 1.08em; line-height: 2.0; }
         .input-calme { padding: 8px 12px; border: 2px solid #cbd5e0; border-radius: 8px; font-size: 1em; font-family: inherit; color: #1e293b; font-weight: 600; background: white; }
 
         /* QUIZ THÉORIQUE */
@@ -112,7 +113,7 @@
         .modal-content { background: white; padding: 25px 30px; border-radius: 14px; width: 90%; max-width: 500px; max-height: 85vh; overflow-y: auto; }
         .radio-option { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer; margin-bottom: 8px; }
 
-        /* OVERLAYS D'ERREUR (SÉCURISÉS) */
+        /* OVERLAYS D'ERREUR SÉCURISÉS */
         #punition-overlay { 
             display: none !important;
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
@@ -186,6 +187,7 @@
         <h1 id="txt-welcome-heading">Bienvenue !</h1>
         <div class="welcome-user-box" id="bienvenue-nom-user">-</div>
         
+        <!-- MODE SÉVÈRE DÉCOCHÉ PAR DÉFAUT -->
         <div class="severe-mode-card" onclick="toggleSevereMode()">
             <input type="checkbox" id="check-severe-mode" onclick="event.stopPropagation()">
             <label for="check-severe-mode" id="txt-severe-mode" style="cursor:pointer; font-weight:600; color:#b91c1c;">
@@ -356,7 +358,7 @@
 
 </div>
 
-<!-- 1. OVERLAY GRAND ÉCRAN ROUGE (ACTIVÉ UNIQUEMENT SI MODE SÉVÈRE COCHÉ) -->
+<!-- 1. OVERLAY GRAND ÉCRAN ROUGE (TAQUIN - SI MODE SÉVÈRE COCHÉ) -->
 <div id="punition-overlay">
     <div id="punition-text">바보!</div>
     <div id="punition-sub">Niveau 1 : Ça commence mal...</div>
@@ -715,7 +717,7 @@
                 let boutonPrincipal = "";
 
                 if (d.typeDevoir === "emma") {
-                    badge = `<span class="badge-type" style="background:#fae8ff; color:#86198f;">🤖 Emma IA</span>`;
+                    badge = `<span class="badge-type" style="background:#fae8ff; color:#86198f;">🤖 Emma IA</span> ${d.modeDelf ? '<span class="badge-delf">🎓 DELF</span>' : ''}`;
                     boutonPrincipal = `<button type="button" class="btn btn-purple" onclick="ouvrirDevoirEmma('${d.id}')">${t('btnParlerEmma')}</button>`;
                 } else if (d.typeDevoir === "chapitre_cours") {
                     badge = `<span class="badge-type" style="background:#e0e7ff; color:#3730a3;">📖 Cours & Quiz</span>`;
@@ -833,7 +835,6 @@
         document.getElementById('vue-chapitre-blocs').style.display = 'block';
     };
 
-    // LECTEUR DE COURS SLIDE PAR SLIDE
     window.afficherBlocCours = function() {
         document.getElementById('vue-chapitre-blocs').style.display = 'none';
         document.getElementById('vue-contenu-bloc-chapitre').style.display = 'block';
@@ -885,7 +886,6 @@
         retourMenuBlocs();
     };
 
-    // QUIZ THÉORIQUE INTERMÉDIAIRE
     window.afficherBlocQuizTheorique = function() {
         document.getElementById('vue-chapitre-blocs').style.display = 'none';
         document.getElementById('vue-contenu-bloc-chapitre').style.display = 'block';
@@ -954,7 +954,7 @@
     };
 
     // =========================================================================
-    // EXERCICES D'APPLICATION : CORRECTION DU DÉCOUPAGE SUR LES LONGS TIRETS BAS
+    // EXERCICES D'APPLICATION : TROUS (RÉGEX ROBUSTE) OU RÉPONSES LIBRES
     // =========================================================================
     window.blocExerciceIndexActif = 0;
 
@@ -990,9 +990,8 @@
 
             const texteQuestion = qItem.q || "";
 
-            // CAS 1 : PHRASE À TROUS (DÉCOUPAGE INTELLIGENT VIA REGEX SUR N'IMPORTE QUELLE SUITE DE TIRET BAS)
+            // CAS 1 : PHRASE À TROUS (DÉCOUPAGE SUR N'IMPORTE QUELLE SÉRIE DE TIRET BAS)
             if (/_{2,}/.test(texteQuestion)) {
-                // Découpe sur n'importe quel bloc de 2 tirets bas ou plus (même 20 tirets d'affilée)
                 const parts = texteQuestion.split(/_{2,}/);
                 let html = `<span>${idx + 1}.</span> `;
                 for (let i = 0; i < parts.length; i++) {
@@ -1006,7 +1005,7 @@
                 html += ` <button type="button" class="btn btn-sm btn-secondary" id="btn-save-ligne-${idx}" onclick="sauvegarderLigneUnique('${bloc.id}', ${idx})" style="margin-left:8px;">💾 Sauvegarder</button>`;
                 item.innerHTML = html;
             } 
-            // CAS 2 : QUESTION OUVERTE / RÉPONSE LIBRE (EX: 25 QUESTIONS DU TEMPS)
+            // CAS 2 : QUESTION OUVERTE / RÉPONSE LIBRE
             else {
                 const cleLibre = `${idx}_reponse_libre`;
                 const valLibre = reponses[cleLibre] || "";
@@ -1052,7 +1051,6 @@
         assignationActive.suiviBlocs[blocId].reponses[cle] = valeur;
     };
 
-    // SAUVEGARDE INDIVIDUELLE PAR LIGNE
     window.sauvegarderLigneUnique = async function(blocId, idx) {
         if (!assignationActive) return;
         const btn = document.getElementById(`btn-save-ligne-${idx}`);
@@ -1191,7 +1189,6 @@
             const div = document.createElement('div');
             div.className = "phrase-box-interactif";
             
-            // DÉCOUPAGE SUR N'IMPORTE QUELLE SÉRIE DE TIRET BAS
             const parts = /_{2,}/.test(p.q) ? p.q.split(/_{2,}/) : [p.q];
             const dejaValide = reponsesValideesInteractif.hasOwnProperty(idx.toString());
             const repSauvegardee = dejaValide ? (reponsesValideesInteractif[idx.toString()].saisie || reponsesValideesInteractif[idx.toString()]) : "";
@@ -1319,9 +1316,9 @@
         retourTableauPrincipal();
     };
 
-    // ==========================================
-    // EXERCICE EMMA IA
-    // ==========================================
+    // =========================================================================
+    // EXERCICE EMMA IA (AVEC SUPPORT DELF B1/B2 ET SUGGESTION D'ARGUMENT)
+    // =========================================================================
     window.ouvrirDevoirEmma = function(id) {
         const d = assignationsMap[id];
         if (!d) return;
@@ -1375,7 +1372,8 @@
                 body: JSON.stringify({
                     question: question,
                     reponseEleve: saisie,
-                    langue: langueActuelle || 'fr'
+                    langue: langueActuelle || 'fr',
+                    modeDelf: assignationActive.modeDelf || false // TRANSMISSION DU MODE DELF
                 })
             });
             const data = await res.json();
@@ -1409,6 +1407,19 @@
         let tradPhraseCorrigee = "";
         if (data.traduction_phrase_corrigee) tradPhraseCorrigee = `<div class="traduction-texte">🌐 ${data.traduction_phrase_corrigee}</div>`;
 
+        // NOUVEAU : ENCADRÉ ARGUMENT DELF B1/B2
+        let blocArgumentDelfHtml = "";
+        if (data.argument_delf) {
+            let tradArg = data.traduction_argument_delf ? `<div class="traduction-texte">🌐 ${data.traduction_argument_delf}</div>` : "";
+            blocArgumentDelfHtml = `
+                <div style="margin-top:14px; background:#faf5ff; border:1px solid #c084fc; border-radius:8px; padding:12px; font-size:0.95em;">
+                    <div style="font-weight:bold; color:#6b21a8; margin-bottom:4px;">🗣️ Idée d'argument pour ton oral (DELF B1/B2) :</div>
+                    <div style="color:#581c87; font-weight:600;">"${data.argument_delf}"</div>
+                    ${tradArg}
+                </div>
+            `;
+        }
+
         zone.innerHTML = `
             <div style="margin-top:15px; background:#faf5ff; border-radius:8px; padding:12px; font-weight:600; color:#581c87;">
                 💬 Emma : "${data.reponse_amicale}"
@@ -1426,6 +1437,7 @@
                     ${tradPhraseCorrigee}
                 </div>
                 <div>💡 <strong>${t('ameliorations')}</strong> : ${data.ameliorations}</div>
+                ${blocArgumentDelfHtml}
             </div>
         `;
     }
