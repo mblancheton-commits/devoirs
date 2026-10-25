@@ -42,7 +42,7 @@ th { background: #f8fafc; color: #475569; }
 .badge-auto { background: #dbeafe; color: #1e40af; padding: 3px 8px; border-radius: 6px; font-weight: bold; font-size: 0.85em; }
 .badge-delf { background: #fdf2f8; color: #be185d; border: 1px solid #fbcfe8; padding: 2px 7px; border-radius: 6px; font-size: 0.8em; font-weight: bold; margin-left: 5px; }
 
-/* MODALES */
+/* MODALES SÉCURISÉES */
 .modal { 
     display: none; 
     position: fixed; 
@@ -97,13 +97,72 @@ th { background: #f8fafc; color: #475569; }
 .btn-filtre-banque.active { background: var(--accent); color: white; border-color: var(--accent); }
 
 /* SURBRILLANCE DES RÉPONSES DANS LA COPIE PDF */
-.surbrillance { background-color: #fef08a !important; padding: 3px 8px; border-radius: 4px; font-weight: bold; color: #1e293b; text-decoration: underline; border: 1px solid #fde047; }
+.surbrillance { 
+    background-color: #fef08a !important; 
+    padding: 2px 6px; 
+    border-radius: 4px; 
+    font-weight: bold; 
+    color: #1e293b !important; 
+    text-decoration: underline; 
+    border: 1px solid #fde047; 
+}
 
-/* GESTION DE L'IMPRESSION (CORRECTION MODALE VISIBLE) */
+/* =========================================================================
+   GESTION DE L'IMPRESSION (PAGINATION NETTE SANS CHEVAUCHEMENT)
+   ========================================================================= */
 @media print {
-    body * { visibility: hidden; }
-    .modal, #modal-export-pdf-prof { display: block !important; position: static !important; }
-    #feuille-impression, #feuille-impression * { visibility: visible; }
-    #feuille-impression { position: absolute; left: 0; top: 0; width: 100%; background: white; padding: 25px; }
-    .no-print { display: none !important; }
+    body {
+        background: white !important;
+        color: black !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    header, .tabs, .tab-pane, .no-print {
+        display: none !important;
+    }
+
+    .modal {
+        display: none !important;
+    }
+
+    /* Seule la modale PDF est affichée en flux statique sans position absolute */
+    #modal-export-pdf-prof {
+        display: block !important;
+        position: static !important;
+        width: 100% !important;
+        height: auto !important;
+        background: white !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+    }
+
+    .modal-content {
+        max-width: 100% !important;
+        width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
+    }
+
+    #feuille-impression {
+        display: block !important;
+        position: static !important;
+        width: 100% !important;
+        padding: 20px !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Évite la découpe sauvage des titres d'exercices */
+    h2, h3 {
+        page-break-after: avoid;
+        break-after: avoid;
+    }
+    
+    li, .fiche-cours-print {
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
 }
