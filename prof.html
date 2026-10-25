@@ -458,13 +458,14 @@
     </div>
 </div>
 
-<!-- 5. MODALE COPIE PDF DE L'ÉLÈVE (SANS AUCUN DOUBLON D'ID) -->
+<!-- 5. MODALE COPIE PDF DE L'ÉLÈVE (SANS COURS, MULTI-PAGES & NOM PRÉREMPLI) -->
 <div class="modal" id="modal-export-pdf-prof">
     <div class="modal-content">
         <div class="no-print" style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ddd; padding-bottom:12px; margin-bottom:20px;">
             <h2 style="margin:0; color:var(--primary);">📄 Copie de l'élève & Réponses complètes</h2>
             <div style="display:flex; gap:8px;">
-                <button type="button" class="btn btn-success" onclick="window.print()">🖨️ Enregistrer en PDF / Imprimer</button>
+                <!-- APPEL DIRECT À LA FONCTION AVEC NOM DU FICHIER PRÉREMPLI -->
+                <button type="button" class="btn btn-success" onclick="imprimerCopiePdfEleve()">🖨️ Enregistrer en PDF / Imprimer</button>
                 <button type="button" class="btn btn-secondary" onclick="document.getElementById('modal-export-pdf-prof').classList.remove('ouverte')">Fermer</button>
             </div>
         </div>
