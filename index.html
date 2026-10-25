@@ -94,7 +94,7 @@
 
         #vue-contenu-bloc-chapitre { display: none; }
         .cours-slide-container { background: white; padding: 30px; border-radius: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); line-height: 1.9; font-size: 1.1em; }
-        .phrase-item { background: white; border: 1px solid #e2e8f0; padding: 18px; border-radius: 10px; margin-bottom: 16px; font-size: 1.08em; line-height: 2.0; }
+        .phrase-item { background: white; border: 1px solid #e2e8f0; padding: 18px; border-radius: 10px; margin-bottom: 16px; font-size: 1.08em; line-height: 2.2; }
         .input-calme { padding: 8px 12px; border: 2px solid #cbd5e0; border-radius: 8px; font-size: 1em; font-family: inherit; color: #1e293b; font-weight: 600; background: white; }
 
         /* QUIZ THÉORIQUE */
@@ -112,7 +112,7 @@
         .modal-content { background: white; padding: 25px 30px; border-radius: 14px; width: 90%; max-width: 500px; max-height: 85vh; overflow-y: auto; }
         .radio-option { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer; margin-bottom: 8px; }
 
-        /* OVERLAYS D'ERREUR */
+        /* OVERLAYS D'ERREUR (SÉCURISÉS) */
         #punition-overlay { 
             display: none !important;
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
@@ -231,7 +231,6 @@
             <div class="emma-avatar">👧</div>
             <div>
                 <h3 style="margin:0; color:#581c87;">Emma</h3>
-                <!-- MENTION (A2-B1) SUPPRIMÉE CI-DESSOUS -->
                 <p id="emma-description" style="margin:4px 0 0 0; color:#6b21a8; font-size:0.95em;">Ton amie française bienveillante. Réponds à ses questions et elle corrigera tes phrases en détail !</p>
             </div>
         </div>
@@ -409,7 +408,7 @@
             btnOuvrirCours: "Ouvrir la leçon ▶",
             btnEntrainement: "✨ Créer un entraînement",
             retourDevoirs: "Retour aux devoirs",
-            descriptionEmma: "Ton amie française bienveillante. Réponds à ses questions et elle corrigera tes phrases en détail !", // MENTION A2-B1 RETIRÉE
+            descriptionEmma: "Ton amie française bienveillante. Réponds à ses questions et elle corrigera tes phrases en détail !",
             placeholderEmma: "Tape ta réponse en français...",
             btnVerifierEmma: "Vérifier 🤖",
             btnTerminerEmma: "Terminer cette discussion avec Emma",
@@ -448,7 +447,7 @@
             btnOuvrirCours: "수업 열기 ▶",
             btnEntrainement: "✨ 맞춤 연습문제 생성",
             retourDevoirs: "과제 목록으로",
-            descriptionEmma: "친절한 프랑스인 친구 엠마입니다. 질문에 답하면 문장을 자세히 교정해 줍니다!", // MENTION A2-B1 RETIRÉE
+            descriptionEmma: "친절한 프랑스인 친구 엠마입니다. 질문에 답하면 문장을 자세히 교정해 줍니다!",
             placeholderEmma: "프랑스어로 답변을 작성하세요...",
             btnVerifierEmma: "확인받기 🤖",
             btnTerminerEmma: "엠마와의 대화 완료하기",
@@ -487,7 +486,7 @@
             btnOuvrirCours: "Open lesson ▶",
             btnEntrainement: "✨ Create practice drill",
             retourDevoirs: "Back to homework",
-            descriptionEmma: "Your friendly French pal. Answer her questions and she will review your sentences in detail!", // MENTION A2-B1 RETIRÉE
+            descriptionEmma: "Your friendly French pal. Answer her questions and she will review your sentences in detail!",
             placeholderEmma: "Type your answer in French...",
             btnVerifierEmma: "Check 🤖",
             btnTerminerEmma: "Finish this chat with Emma",
@@ -834,6 +833,7 @@
         document.getElementById('vue-chapitre-blocs').style.display = 'block';
     };
 
+    // LECTEUR DE COURS SLIDE PAR SLIDE
     window.afficherBlocCours = function() {
         document.getElementById('vue-chapitre-blocs').style.display = 'none';
         document.getElementById('vue-contenu-bloc-chapitre').style.display = 'block';
@@ -885,6 +885,7 @@
         retourMenuBlocs();
     };
 
+    // QUIZ THÉORIQUE INTERMÉDIAIRE
     window.afficherBlocQuizTheorique = function() {
         document.getElementById('vue-chapitre-blocs').style.display = 'none';
         document.getElementById('vue-contenu-bloc-chapitre').style.display = 'block';
@@ -953,7 +954,7 @@
     };
 
     // =========================================================================
-    // EXERCICES D'APPLICATION AVEC BOUTON SAUVEGARDER PAR LIGNE
+    // EXERCICES D'APPLICATION : CORRECTION DU DÉCOUPAGE SUR LES LONGS TIRETS BAS
     // =========================================================================
     window.blocExerciceIndexActif = 0;
 
@@ -989,9 +990,10 @@
 
             const texteQuestion = qItem.q || "";
 
-            // CAS 1 : PHRASE À TROUS (____)
-            if (texteQuestion.includes('____') || texteQuestion.includes('___')) {
-                const parts = texteQuestion.includes('____') ? texteQuestion.split('____') : texteQuestion.split('___');
+            // CAS 1 : PHRASE À TROUS (DÉCOUPAGE INTELLIGENT VIA REGEX SUR N'IMPORTE QUELLE SUITE DE TIRET BAS)
+            if (/_{2,}/.test(texteQuestion)) {
+                // Découpe sur n'importe quel bloc de 2 tirets bas ou plus (même 20 tirets d'affilée)
+                const parts = texteQuestion.split(/_{2,}/);
                 let html = `<span>${idx + 1}.</span> `;
                 for (let i = 0; i < parts.length; i++) {
                     html += parts[i];
@@ -1023,7 +1025,7 @@
             conteneur.appendChild(item);
         });
 
-        // BOUTONS GLOBAUX EN BAS DE L'EXERCICE
+        // BOUTONS GLOBAUX EN BAS
         const barActions = document.createElement('div');
         barActions.style.display = "flex";
         barActions.style.justifyContent = "space-between";
@@ -1032,7 +1034,7 @@
         barActions.style.paddingTop = "20px";
         barActions.style.borderTop = "1px solid #e2e8f0";
         barActions.style.flexWrap = "wrap";
-        barActions.gap = "10px";
+        barActions.style.gap = "10px";
 
         barActions.innerHTML = `
             <button type="button" class="btn btn-warning" onclick="sauvegarderProgressionExercice(false)">💾 Sauvegarder tout le bloc</button>
@@ -1050,7 +1052,7 @@
         assignationActive.suiviBlocs[blocId].reponses[cle] = valeur;
     };
 
-    // SAUVEGARDE INDIVIDUELLE PAR LIGNE AVEC FEEDBACK VISUEL
+    // SAUVEGARDE INDIVIDUELLE PAR LIGNE
     window.sauvegarderLigneUnique = async function(blocId, idx) {
         if (!assignationActive) return;
         const btn = document.getElementById(`btn-save-ligne-${idx}`);
@@ -1188,7 +1190,9 @@
         (d.phrases || []).forEach((p, idx) => {
             const div = document.createElement('div');
             div.className = "phrase-box-interactif";
-            const parts = p.q.includes('____') ? p.q.split('____') : p.q.split('___');
+            
+            // DÉCOUPAGE SUR N'IMPORTE QUELLE SÉRIE DE TIRET BAS
+            const parts = /_{2,}/.test(p.q) ? p.q.split(/_{2,}/) : [p.q];
             const dejaValide = reponsesValideesInteractif.hasOwnProperty(idx.toString());
             const repSauvegardee = dejaValide ? (reponsesValideesInteractif[idx.toString()].saisie || reponsesValideesInteractif[idx.toString()]) : "";
 
