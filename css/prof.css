@@ -99,8 +99,10 @@ th { background: #f8fafc; color: #475569; }
 /* SURBRILLANCE DES RÉPONSES DANS LA COPIE PDF */
 .surbrillance { background-color: #fef08a !important; padding: 3px 8px; border-radius: 4px; font-weight: bold; color: #1e293b; text-decoration: underline; border: 1px solid #fde047; }
 
+/* GESTION DE L'IMPRESSION (CORRECTION MODALE VISIBLE) */
 @media print {
     body * { visibility: hidden; }
+    .modal, #modal-export-pdf-prof { display: block !important; position: static !important; }
     #feuille-impression, #feuille-impression * { visibility: visible; }
     #feuille-impression { position: absolute; left: 0; top: 0; width: 100%; background: white; padding: 25px; }
     .no-print { display: none !important; }
